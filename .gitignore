@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dashboard/.next/
+dashboard/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic
+gateway/app/db/migrations/versions/__pycache__/
+
+# Coverage
+coverage/
+*.lcov

@@ -1,0 +1,439 @@
+@import "tailwindcss";
+
+/* ============================================
+   Sentinel Design System
+   ============================================ */
+
+:root {
+  /* Core palette */
+  --sentinel-bg: #0a0a0f;
+  --sentinel-surface: #12121a;
+  --sentinel-surface-hover: #1a1a26;
+  --sentinel-surface-elevated: #1e1e2e;
+  --sentinel-border: #2a2a3a;
+  --sentinel-border-subtle: #1e1e2e;
+
+  /* Text */
+  --sentinel-text-primary: #f0f0f5;
+  --sentinel-text-secondary: #8888a0;
+  --sentinel-text-muted: #55556a;
+
+  /* Accent — electric indigo/violet */
+  --sentinel-accent: #7c5cfc;
+  --sentinel-accent-light: #9d85fd;
+  --sentinel-accent-glow: rgba(124, 92, 252, 0.15);
+  --sentinel-accent-dim: rgba(124, 92, 252, 0.08);
+
+  /* Status colors */
+  --sentinel-success: #34d399;
+  --sentinel-success-dim: rgba(52, 211, 153, 0.1);
+  --sentinel-warning: #fbbf24;
+  --sentinel-warning-dim: rgba(251, 191, 36, 0.1);
+  --sentinel-error: #f87171;
+  --sentinel-error-dim: rgba(248, 113, 113, 0.1);
+
+  /* Provider colors */
+  --color-openai: #10a37f;
+  --color-anthropic: #d4a27f;
+
+  --background: var(--sentinel-bg);
+  --foreground: var(--sentinel-text-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--sentinel-bg);
+  color: var(--sentinel-text-primary);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sentinel-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sentinel-text-muted);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--sentinel-accent-glow); }
+  50% { box-shadow: 0 0 20px 4px var(--sentinel-accent-glow); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-count-up {
+  animation: countUp 0.6s ease-out forwards;
+}
+
+/* Staggered children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.30s; }
+
+/* ============================================
+   Glass / Surface Effects
+   ============================================ */
+
+.glass-panel {
+  background: rgba(18, 18, 26, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--sentinel-border);
+  border-radius: 12px;
+}
+
+.glass-panel-elevated {
+  background: rgba(30, 30, 46, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--sentinel-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   Stat Cards
+   ============================================ */
+
+.stat-card {
+  background: var(--sentinel-surface);
+  border: 1px solid var(--sentinel-border-subtle);
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sentinel-accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--sentinel-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sentinel-text-muted);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sentinel-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-sub {
+  font-size: 0.8rem;
+  color: var(--sentinel-text-secondary);
+  margin-top: 4px;
+}
+
+/* ============================================
+   Trace Table
+   ============================================ */
+
+.trace-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.trace-table th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sentinel-text-muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--sentinel-border-subtle);
+  position: sticky;
+  top: 0;
+  background: var(--sentinel-surface);
+  z-index: 1;
+}
+
+.trace-table td {
+  padding: 14px 16px;
+  font-size: 0.875rem;
+  color: var(--sentinel-text-secondary);
+  border-bottom: 1px solid var(--sentinel-border-subtle);
+  transition: background-color 0.15s ease;
+}
+
+.trace-table tr:hover td {
+  background-color: var(--sentinel-surface-hover);
+  color: var(--sentinel-text-primary);
+}
+
+.trace-table tr {
+  cursor: pointer;
+}
+
+/* ============================================
+   Badges / Pills
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-openai {
+  background: rgba(16, 163, 127, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 163, 127, 0.2);
+}
+
+.badge-anthropic {
+  background: rgba(212, 162, 127, 0.12);
+  color: #d4a27f;
+  border: 1px solid rgba(212, 162, 127, 0.2);
+}
+
+.badge-success {
+  background: var(--sentinel-success-dim);
+  color: var(--sentinel-success);
+}
+
+.badge-error {
+  background: var(--sentinel-error-dim);
+  color: var(--sentinel-error);
+}
+
+/* ============================================
+   JSON Viewer
+   ============================================ */
+
+.json-viewer {
+  background: var(--sentinel-bg);
+  border: 1px solid var(--sentinel-border-subtle);
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+  max-height: 480px;
+  font-family: var(--font-geist-mono), 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--sentinel-text-secondary);
+}
+
+.json-key {
+  color: var(--sentinel-accent-light);
+}
+
+.json-string {
+  color: var(--sentinel-success);
+}
+
+.json-number {
+  color: var(--sentinel-warning);
+}
+
+.json-boolean {
+  color: #c084fc;
+}
+
+.json-null {
+  color: var(--sentinel-text-muted);
+}
+
+/* ============================================
+   Loading / Skeleton
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sentinel-surface) 25%,
+    var(--sentinel-surface-hover) 50%,
+    var(--sentinel-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--sentinel-accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--sentinel-accent-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--sentinel-accent-glow);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--sentinel-text-secondary);
+  border: 1px solid var(--sentinel-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--sentinel-surface-hover);
+  border-color: var(--sentinel-text-muted);
+  color: var(--sentinel-text-primary);
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+  color: var(--sentinel-text-muted);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--sentinel-text-primary);
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  font-size: 0.9rem;
+  color: var(--sentinel-text-muted);
+  max-width: 400px;
+  line-height: 1.5;
+}

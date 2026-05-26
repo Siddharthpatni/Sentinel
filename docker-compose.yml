@@ -1,0 +1,85 @@
+services:
+  # --- Postgres ---
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- Sentinel Gateway (FastAPI) ---
+  gateway:
+    build:
+      context: ./gateway
+      target: gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
+      DATABASE_URL_SYNC: postgresql+psycopg2://sentinel:sentinel@postgres:5432/sentinel
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./gateway:/app
+
+  # --- Celery Worker ---
+  worker:
+    build:
+      context: ./gateway
+      target: worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
+      DATABASE_URL_SYNC: postgresql+psycopg2://sentinel:sentinel@postgres:5432/sentinel
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./gateway:/app
+
+  # --- Dashboard (Next.js) ---
+  dashboard:
+    build:
+      context: ./dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://gateway:8000
+    depends_on:
+      - gateway
+
+volumes:
+  pgdata:
