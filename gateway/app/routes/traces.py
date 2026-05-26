@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import desc, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Trace
 from app.db.session import AsyncSessionLocal
@@ -46,8 +44,8 @@ async def list_traces(
                             & (Trace.id < cursor_trace.id)
                         )
                     )
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid cursor format")
+            except ValueError as err:
+                raise HTTPException(status_code=400, detail="Invalid cursor format") from err
 
         # Get total count (without cursor filter)
         count_query = select(func.count(Trace.id))

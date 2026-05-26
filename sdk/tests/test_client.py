@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sentinel.client import OpenAI, Anthropic
+from sentinel.client import Anthropic, OpenAI
 
 
 class TestOpenAIClient:

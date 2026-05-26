@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 import httpx
+import pytest
 import respx
 
-from app.providers.openai import OpenAIAdapter, OPENAI_BASE_URL
+from app.providers.openai import OPENAI_BASE_URL, OpenAIAdapter
 
 
 @pytest.fixture

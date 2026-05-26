@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 import httpx
+import pytest
 import respx
 
-from app.providers.anthropic import AnthropicAdapter, ANTHROPIC_BASE_URL
+from app.providers.anthropic import ANTHROPIC_BASE_URL, AnthropicAdapter
 
 
 @pytest.fixture

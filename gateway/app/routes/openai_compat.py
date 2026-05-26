@@ -9,7 +9,6 @@ import time
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db.models import Project
@@ -142,7 +141,7 @@ async def _handle_stream(
             if line.startswith("data: ") and line != "data: [DONE]":
                 try:
                     chunk_data = json.loads(line[6:])
-                    if "usage" in chunk_data and chunk_data["usage"]:
+                    if chunk_data.get("usage"):
                         prompt_tokens = chunk_data["usage"].get("prompt_tokens", 0)
                         completion_tokens = chunk_data["usage"].get("completion_tokens", 0)
                     if "model" in chunk_data:

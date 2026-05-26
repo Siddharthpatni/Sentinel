@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.db.models import Trace
-from app.db.session import SyncSessionLocal, get_sync_session
+from app.db.session import get_sync_session
 from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def persist_trace_task(self, payload: dict) -> str:  # type: ignore[no-untyped-d
             request_body=payload.get("request_body"),
             response_body=payload.get("response_body"),
             error_message=payload.get("error_message"),
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(trace)
         session.commit()
@@ -49,6 +49,6 @@ def persist_trace_task(self, payload: dict) -> str:  # type: ignore[no-untyped-d
     except Exception as exc:
         session.rollback()
         logger.error("Failed to persist trace: %s", exc)
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
     finally:
         session.close()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     DateTime,
@@ -39,12 +39,12 @@ class Project(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
 
     # Relationship
-    traces: Mapped[list["Trace"]] = relationship(
+    traces: Mapped[list[Trace]] = relationship(
         "Trace", back_populates="project", cascade="all, delete-orphan"
     )
 
@@ -79,12 +79,12 @@ class Trace(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
 
     # Relationship
-    project: Mapped["Project"] = relationship("Project", back_populates="traces")
+    project: Mapped[Project] = relationship("Project", back_populates="traces")
 
     # Indexes
     __table_args__ = (

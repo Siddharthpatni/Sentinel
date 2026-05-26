@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from typing import AsyncIterator
+from typing import TYPE_CHECKING
 
 import httpx
 
 from app.config import settings
 from app.providers.base import BaseAdapter, ProviderResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 logger = logging.getLogger(__name__)
 

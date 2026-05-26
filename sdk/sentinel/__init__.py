@@ -2,4 +2,4 @@
 
 from sentinel.client import Anthropic, OpenAI
 
-__all__ = ["OpenAI", "Anthropic"]
+__all__ = ["Anthropic", "OpenAI"]

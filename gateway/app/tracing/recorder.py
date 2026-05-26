@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-from app.tracing.schema import TraceCreate
+if TYPE_CHECKING:
+    from app.tracing.schema import TraceCreate
 
 logger = logging.getLogger(__name__)
 

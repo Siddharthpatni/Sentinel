@@ -16,8 +16,8 @@ Usage::
 
 from __future__ import annotations
 
-import openai as _openai
 import anthropic as _anthropic
+import openai as _openai
 
 _DEFAULT_SENTINEL_URL = "http://localhost:8000"
 

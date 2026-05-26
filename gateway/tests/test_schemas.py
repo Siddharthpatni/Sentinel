@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from app.tracing.schema import TraceCreate, TraceResponse, TraceStats
 
@@ -74,7 +72,7 @@ class TestTraceResponse:
             "completion_tokens": 50,
             "cost_usd": 0.001,
             "status_code": 200,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         resp = TraceResponse(**data)
         assert resp.provider == "openai"
