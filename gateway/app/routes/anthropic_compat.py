@@ -36,7 +36,7 @@ async def _resolve_project(api_key: str) -> Project:
         return project
 
 
-@router.post("/v1/messages")
+@router.post("/v1/messages", response_model=None)
 async def create_message(
     request: Request,
     x_sentinel_key: str | None = Header(None),

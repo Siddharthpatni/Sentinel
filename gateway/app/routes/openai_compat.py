@@ -46,7 +46,7 @@ def _extract_api_key(authorization: str | None) -> str:
     return parts[1]
 
 
-@router.post("/v1/chat/completions")
+@router.post("/v1/chat/completions", response_model=None)
 async def chat_completions(
     request: Request,
     authorization: str | None = Header(None),
