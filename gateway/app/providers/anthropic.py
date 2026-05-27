@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from app.config import settings
 from app.providers.base import BaseAdapter, ProviderResponse
 
 if TYPE_CHECKING:
@@ -32,7 +31,13 @@ class AnthropicAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> ProviderResponse:
         """Forward a non-streaming request to Anthropic."""
-        api_key = headers.get("x-provider-key", settings.anthropic_api_key)
+        api_key = headers.get("x-provider-key", "")
+        if not api_key:
+            return ProviderResponse(
+                status_code=402,
+                body={"error": {"message": "No Anthropic credential configured. Add one at /settings/keys."}},
+                error_message="missing credential",
+            )
         upstream_headers = {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
@@ -75,7 +80,9 @@ class AnthropicAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> AsyncIterator[bytes]:
         """Forward a streaming request to Anthropic, yielding SSE chunks."""
-        api_key = headers.get("x-provider-key", settings.anthropic_api_key)
+        api_key = headers.get("x-provider-key", "")
+        if not api_key:
+            raise RuntimeError("No Anthropic credential configured. Add one at /settings/keys.")
         upstream_headers = {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",

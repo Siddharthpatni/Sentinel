@@ -74,3 +74,12 @@ class TestOpenAIAdapterForward:
 
         assert result.status_code == 401
         assert result.error_message == "Invalid API key"
+
+
+class TestOpenAIAdapterCredentials:
+    """BYOK: adapter rejects requests with no x-provider-key."""
+
+    async def test_missing_key_returns_402(self, adapter: OpenAIAdapter) -> None:
+        result = await adapter.forward({"model": "gpt-4o", "messages": []}, {})
+        assert result.status_code == 402
+        assert "credential" in (result.error_message or "")

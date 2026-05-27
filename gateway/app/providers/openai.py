@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from app.config import settings
 from app.providers.base import BaseAdapter, ProviderResponse
 
 if TYPE_CHECKING:
@@ -32,8 +31,15 @@ class OpenAIAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> ProviderResponse:
         """Forward a non-streaming request to OpenAI."""
+        api_key = headers.get("x-provider-key", "")
+        if not api_key:
+            return ProviderResponse(
+                status_code=402,
+                body={"error": {"message": "No OpenAI credential configured. Add one at /settings/keys."}},
+                error_message="missing credential",
+            )
         upstream_headers = {
-            "Authorization": f"Bearer {headers.get('x-provider-key', settings.openai_api_key)}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
@@ -74,8 +80,11 @@ class OpenAIAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> AsyncIterator[bytes]:
         """Forward a streaming request to OpenAI, yielding SSE chunks."""
+        api_key = headers.get("x-provider-key", "")
+        if not api_key:
+            raise RuntimeError("No OpenAI credential configured. Add one at /settings/keys.")
         upstream_headers = {
-            "Authorization": f"Bearer {headers.get('x-provider-key', settings.openai_api_key)}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 

@@ -75,3 +75,12 @@ class TestAnthropicAdapterForward:
 
         assert result.status_code == 401
         assert result.error_message == "invalid x-api-key"
+
+
+class TestAnthropicAdapterCredentials:
+    """BYOK: adapter rejects requests with no x-provider-key."""
+
+    async def test_missing_key_returns_402(self, adapter: AnthropicAdapter) -> None:
+        result = await adapter.forward({"model": "claude-haiku-4-5", "messages": []}, {})
+        assert result.status_code == 402
+        assert "credential" in (result.error_message or "")

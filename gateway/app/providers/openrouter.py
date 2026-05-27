@@ -26,9 +26,11 @@ class OpenRouterAdapter(BaseAdapter):
     def __init__(self) -> None:
         self._client = httpx.AsyncClient(timeout=120.0)
 
-    def _headers(self, override_key: str | None) -> dict[str, str]:
+    def _headers(self, api_key: str | None) -> dict[str, str]:
+        if not api_key:
+            raise RuntimeError("No OpenRouter credential configured. Add one at /settings/keys.")
         return {
-            "Authorization": f"Bearer {override_key or settings.openrouter_api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             # OpenRouter recommends these for attribution / rate-limit tier:
             "HTTP-Referer": settings.openrouter_referer,
