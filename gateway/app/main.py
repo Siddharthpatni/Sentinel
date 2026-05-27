@@ -13,6 +13,7 @@ from app.config import settings
 from app.db.models import Base
 from app.db.seed import seed_default_project
 from app.db.session import AsyncSessionLocal, async_engine
+from app.security.keyvault import redact_event
 from app.routes import (
     alerts,
     annotations,
@@ -41,6 +42,10 @@ def configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
+            # Redact API-key-shaped substrings before they hit the renderer.
+            # Order matters: must run after exception/stack rendering so it
+            # also catches keys that leaked into traceback strings.
+            redact_event,
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.stdlib.BoundLogger,

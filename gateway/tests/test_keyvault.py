@@ -78,3 +78,18 @@ def test_redact_event_processor_walks_dict():
     assert "sk-proj-abcdef1234567890ABCDEF1234567890" not in redacted["event"]
     assert "sk-proj-abcdef1234567890ABCDEF1234567890" not in redacted["headers"]["authorization"]
     assert redacted["url"] == "https://api.openai.com/v1/chat"  # untouched
+
+
+def test_structlog_pipeline_redacts_end_to_end(capsys):
+    """End-to-end: the processor wired into structlog must redact log output."""
+    import structlog
+
+    structlog.configure(
+        processors=[redact_event, structlog.processors.JSONRenderer()],
+        cache_logger_on_first_use=False,
+    )
+    log = structlog.get_logger("test")
+    log.info("calling provider", api_key="sk-proj-abcdef1234567890ABCDEF1234567890")
+    out = capsys.readouterr().out
+    assert "sk-proj-abcdef1234567890ABCDEF1234567890" not in out
+    assert "sk-p" in out and "7890" in out  # fingerprint survives JSON escape of `…`
