@@ -4,7 +4,72 @@
 
 Sentinel sits as a drop-in proxy between your application and any LLM provider (OpenAI, Anthropic). It logs every request and response, tracks cost and latency per call, and exposes a live dashboard for inspecting traces.
 
-> 🚧 **Phase 1 MVP** — Under active development.
+> **Phase 3** — observability · verification · routing · evals · audit · alerts.
+
+## Features
+
+- **Observability** — every LLM call traced with cost, latency, tokens,
+  and full request/response bodies in a live dashboard. Cost over the
+  last 24h shown as an inline sparkline.
+- **Verifications** — declarative rules re-check primary calls with a
+  judge model. Sampled, async, never blocks the caller. See
+  [docs/verifications.md](docs/verifications.md).
+- **Routing & fallback** — per-request model overrides with ordered
+  candidate fallback (3 attempts max). Streaming bypasses to preserve
+  bytes-on-the-wire semantics. See [docs/routing.md](docs/routing.md).
+- **Evals** — YAML-defined regression suites with seven assertion types
+  (contains/equals/regex/max-latency/max-cost/json-schema/llm-judge), a
+  run-history UI, pass-rate trend endpoint, and a CI entrypoint for
+  GitHub Actions. See [docs/evals.md](docs/evals.md).
+- **EU AI Act audit log** — risk-tier classifiers tag inbound calls;
+  every tagged call lands in a SHA-256-chained ledger an auditor can
+  verify offline. NDJSON export, server-side `/verify`. See
+  [docs/audit.md](docs/audit.md).
+- **Alerts** — threshold checks on cost-per-hour, error-rate, and p95
+  latency over rolling windows. On-demand evaluation — wire to cron,
+  Slack, or Datadog however you like. See [docs/alerts.md](docs/alerts.md).
+
+Learning notes for the concepts behind the implementation live in
+[docs/learn/](docs/learn/README.md).
+
+## Use Sentinel in your project
+
+Sentinel ships as an installable Python module. Drop it into any existing
+project to get observability + verifications + routing + evals on every
+LLM call.
+
+```bash
+pip install sentinel-sdk   # or: pip install -e ./sdk from a checkout
+```
+
+**1. Drop-in proxy** — swap two lines, keep the rest of your code:
+
+```python
+from sentinel import OpenAI
+
+client = OpenAI(
+    sentinel_api_key="sk-sentinel-dev-000",
+    sentinel_url="http://localhost:8000",
+    provider_api_key="sk-...",   # your real OpenAI key
+)
+# Use client.chat.completions.create(...) exactly as before.
+```
+
+**2. Programmatic control plane** — manage rules, policies, and evals
+from Python instead of the dashboard:
+
+```python
+from sentinel import Sentinel
+
+s = Sentinel(url="http://localhost:8000", api_key="sk-sentinel-dev-000")
+s.verifications.create_rule(project_id=..., name=..., match_jsonpath=..., ...)
+s.routing.create(project_id=..., candidates=[{"model": "gpt-4o-mini"}, ...])
+run = s.evals.run(eval_id)                # block-and-return: usable in CI
+assert run["failed"] == 0
+```
+
+Full API and more examples in [sdk/README.md](sdk/README.md) and
+[examples/sdk_quickstart.py](examples/sdk_quickstart.py).
 
 ## Quick Start
 
@@ -63,8 +128,8 @@ response = client.messages.create(
 
 ```
 ┌─────────────┐     ┌─────────────────┐     ┌──────────────┐
-│  Your App   │────▶│ Sentinel Gateway │────▶│ OpenAI /     │
-│  (SDK)      │◀────│  (FastAPI)       │◀────│ Anthropic    │
+│  Your App   │────▶│ Sentinel Gateway│────▶│ OpenAI /     │
+│  (SDK)      │◀────│  (FastAPI)      │◀────│ Anthropic    │
 └─────────────┘     └────────┬────────┘     └──────────────┘
                              │
                     ┌────────▼────────┐
@@ -72,7 +137,7 @@ response = client.messages.create(
                     └────────┬────────┘
                              │
                     ┌────────▼────────┐     ┌──────────────┐
-                    │  Celery Worker  │────▶│  PostgreSQL   │
+                    │  Celery Worker  │────▶│  PostgreSQL  │
                     └─────────────────┘     └──────┬───────┘
                                                    │
                                           ┌────────▼────────┐
@@ -82,8 +147,8 @@ response = client.messages.create(
 ```
 
 **Services:**
-| Service     | Port | Description                        |
-|-------------|------|------------------------------------|
+| Service     | Port | Description                         |
+|-------------|------|------------------------------------ |
 | Gateway     | 8000 | FastAPI proxy + API                 |
 | Dashboard   | 3000 | Next.js observability UI            |
 | PostgreSQL  | 5432 | Trace storage                       |

@@ -1,0 +1,66 @@
+# Example eval suite for Sentinel.
+#
+# Save this as customer-support.yaml, then POST the file contents as the
+# `yaml_source` field on `POST /api/evals` (or paste it into the Evals page
+# in the dashboard).
+#
+# To run from CI:
+#   python -m app.evals.github_action \
+#     --suite examples/eval_suite_example.yaml \
+#     --gateway-url http://localhost:8000 \
+#     --api-key sk-sentinel-dev-000 \
+#     --fail-on-regression
+
+name: customer-support-quality
+target:
+  endpoint: /v1/chat/completions
+  model: gpt-4o-mini
+
+cases:
+  - name: refund-mentions-refund
+    input:
+      messages:
+        - role: system
+          content: You are a polite customer support agent.
+        - role: user
+          content: I want a refund for order #1234.
+      temperature: 0
+    assertions:
+      - type: contains
+        path: $.choices[0].message.content
+        value: refund
+        case_sensitive: false
+      - type: max_latency_ms
+        value: 8000
+      - type: max_cost_usd
+        value: 0.01
+
+  - name: greeting-is-polite
+    input:
+      messages:
+        - role: user
+          content: Hi!
+      temperature: 0
+    assertions:
+      - type: regex
+        path: $.choices[0].message.content
+        pattern: "(?i)(hello|hi|hey|welcome|good)"
+      - type: not_contains
+        path: $.choices[0].message.content
+        value: sorry, I cannot
+
+  - name: structured-output-shape
+    input:
+      messages:
+        - role: user
+          content: Return JSON with keys `summary` (string) and `confidence` (0..1).
+      response_format:
+        type: json_object
+    assertions:
+      - type: json_schema
+        schema:
+          type: object
+          properties:
+            choices:
+              type: array
+          required: [choices]

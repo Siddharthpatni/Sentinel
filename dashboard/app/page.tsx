@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   fetchTraces,
   fetchTraceStats,
+  fetchTraceTimeseries,
+  type TimeseriesPoint,
   type Trace,
   type TraceStats,
 } from "@/lib/api";
+import { Sparkline } from "@/components/sparkline";
 
 /* ================================================================
    Helper Functions
@@ -214,6 +217,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [traces, setTraces] = useState<Trace[]>([]);
   const [stats, setStats] = useState<TraceStats | null>(null);
+  const [series, setSeries] = useState<TimeseriesPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -221,13 +225,15 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [tracesRes, statsRes] = await Promise.all([
+      const [tracesRes, statsRes, seriesRes] = await Promise.all([
         fetchTraces({ limit: 50 }),
         fetchTraceStats(),
+        fetchTraceTimeseries(24, "hour"),
       ]);
       setTraces(tracesRes.traces);
       setNextCursor(tracesRes.next_cursor);
       setStats(statsRes);
+      setSeries(seriesRes.points);
     } catch (err) {
       console.error("Failed to load data:", err);
     } finally {
@@ -262,38 +268,27 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--sentinel-bg)" }}>
-      {/* ── Header ── */}
+      {/* ── Page header (page-scoped controls; global nav lives in layout NavBar) ── */}
       <header
-        className="sticky top-0 z-50 flex items-center justify-between px-6 py-4"
+        className="flex items-center justify-between px-6 py-4"
         style={{
-          background: "rgba(10, 10, 15, 0.85)",
-          backdropFilter: "blur(12px)",
+          background: "transparent",
           borderBottom: "1px solid var(--sentinel-border-subtle)",
         }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="flex items-center justify-center rounded-lg p-1.5"
-            style={{ background: "var(--sentinel-accent-dim)" }}
+        <div>
+          <h1
+            className="text-lg font-bold tracking-tight"
+            style={{ color: "var(--sentinel-text-primary)" }}
           >
-            <span style={{ color: "var(--sentinel-accent)" }}>
-              <IconRadar />
-            </span>
-          </div>
-          <div>
-            <h1
-              className="text-lg font-bold tracking-tight"
-              style={{ color: "var(--sentinel-text-primary)" }}
-            >
-              Sentinel
-            </h1>
-            <p
-              className="text-xs"
-              style={{ color: "var(--sentinel-text-muted)" }}
-            >
-              LLM Observability
-            </p>
-          </div>
+            Traces
+          </h1>
+          <p
+            className="text-xs"
+            style={{ color: "var(--sentinel-text-muted)" }}
+          >
+            Live LLM API call observability
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -392,6 +387,43 @@ export default function DashboardPage() {
             error={!!stats && stats.error_count > 0}
           />
         </div>
+
+        {/* Cost over time chart (Week 10) */}
+        {series.length > 0 && (
+          <div className="glass-panel mb-8 p-5 animate-slide-up">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--sentinel-text-primary)" }}
+                >
+                  Spend (last 24h)
+                </h2>
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--sentinel-text-muted)" }}
+                >
+                  Total: {formatCost(series.reduce((s, p) => s + p.cost_usd, 0))}
+                </p>
+              </div>
+              <span
+                className="text-xs"
+                style={{ color: "var(--sentinel-text-muted)" }}
+              >
+                bucket: hour
+              </span>
+            </div>
+            <Sparkline
+              width={1200}
+              height={90}
+              points={series.map((p, i) => ({
+                x: i,
+                y: p.cost_usd,
+                label: p.bucket,
+              }))}
+            />
+          </div>
+        )}
 
         {/* Traces Table */}
         <div className="glass-panel overflow-hidden animate-slide-up">

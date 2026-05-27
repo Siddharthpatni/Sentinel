@@ -22,6 +22,8 @@ class TraceCreate(BaseModel):
     request_body: dict | None = None
     response_body: dict | None = None
     error_message: str | None = None
+    risk_tier: str | None = None
+    session_id: uuid.UUID | None = None
 
 
 class TraceResponse(BaseModel):
@@ -39,6 +41,8 @@ class TraceResponse(BaseModel):
     request_body: dict | None = None
     response_body: dict | None = None
     error_message: str | None = None
+    risk_tier: str | None = None
+    session_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

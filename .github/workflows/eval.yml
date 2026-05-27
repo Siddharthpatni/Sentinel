@@ -1,0 +1,30 @@
+name: Sentinel eval
+
+on:
+  pull_request:
+    paths:
+      - "evals/**"
+      - ".github/workflows/eval.yml"
+  workflow_dispatch:
+
+jobs:
+  run-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install gateway deps
+        working-directory: gateway
+        run: |
+          pip install -e .
+      - name: Run Sentinel eval suite
+        env:
+          SENTINEL_API_KEY: ${{ secrets.SENTINEL_API_KEY }}
+        working-directory: gateway
+        run: |
+          python -m app.evals.github_action \
+            --suite ../evals/customer-support.yaml \
+            --gateway-url ${{ vars.SENTINEL_GATEWAY_URL }} \
+            --fail-on-regression

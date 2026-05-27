@@ -40,11 +40,26 @@ def persist_trace_task(self, payload: dict) -> str:  # type: ignore[no-untyped-d
             request_body=payload.get("request_body"),
             response_body=payload.get("response_body"),
             error_message=payload.get("error_message"),
+            risk_tier=payload.get("risk_tier"),
+            session_id=(uuid.UUID(payload["session_id"]) if payload.get("session_id") else None),
             created_at=datetime.now(UTC),
         )
         session.add(trace)
+        session.flush()
+
+        try:
+            from app.audit.ledger import append_for_trace
+            append_for_trace(session, trace)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to append audit ledger entry for %s: %s", trace.id, exc)
+
         session.commit()
         logger.info("Persisted trace %s for %s/%s", trace.id, trace.provider, trace.model)
+        try:
+            from app.workers.evaluate_trace import evaluate_trace
+            evaluate_trace.delay(str(trace.id))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to schedule verification for %s: %s", trace.id, exc)
         return str(trace.id)
     except Exception as exc:
         session.rollback()

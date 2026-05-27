@@ -14,17 +14,17 @@
 |---|------|--------|--------|------|-------|
 | 1 | Migration 002 (5 new tables) | ✓ | (next) | 2026-05-26 | 6 tables created via SQLAlchemy create_all (Phase 1 has no Alembic baseline). See deviations. |
 | 2 | Verification rules model + CRUD | ✓ | (next) | 2026-05-26 | POST/GET/PATCH/DELETE on /api/verification-rules; 6 integration tests written |
-| 3 | Judge module (Jinja2 + structured output) | ☐ | | | |
+| 3 | Judge module (Jinja2 + structured output) | ✓ | (next) | 2026-05-27 | `app/verification/judges.py` + 7 tests (sandbox blocks dunder access; parser tolerates JSON-in-prose) |
 | 4 | Verification orchestrator Celery task | ☐ | | | |
 | 5 | `/api/verifications` GET endpoint | ☐ | | | |
-| 6 | Dashboard `/verifications` page | ☐ | | | |
-| 7 | Routing policy model + CRUD | ☐ | | | |
+| 6 | Dashboard `/verifications` page | ✓ | (next) | 2026-05-27 | Interactive: create / toggle / delete rules. `/api/projects` added so the UI can pick a project. |
+| 7 | Routing policy model + CRUD | ✓ | (next) | 2026-05-27 | `POST/GET/PATCH/DELETE /api/routing-policies` with Pydantic Candidate + FallbackOn schemas |
 | 8 | Routing middleware + fallback | ☐ | | | |
-| 9 | Dashboard `/policies` page | ☐ | | | |
-| 10 | Eval YAML parser + assertion engine | ☐ | | | |
+| 9 | Dashboard `/policies` page | ✓ | (next) | 2026-05-27 | Card list, create form, toggle, delete. Middleware wiring still pending (Step 8). |
+| 10 | Eval YAML parser + assertion engine | ✓ | (next) | 2026-05-27 | `app/evals/parser.py` + `assertions.py` with discriminated-union assertions; 6 contains/regex/latency tests |
 | 11 | Eval runner | ☐ | | | |
-| 12 | `/api/evals/*` endpoints | ☐ | | | |
-| 13 | Dashboard `/evals/*` pages | ☐ | | | |
+| 12 | `/api/evals/*` endpoints | 🔄 | (next) | 2026-05-27 | Minimal CRUD only (create-from-YAML upsert, list, delete). Run + history endpoints pending. |
+| 13 | Dashboard `/evals/*` pages | 🔄 | (next) | 2026-05-27 | Suite list with YAML editor + delete. Run detail subpages pending. |
 | 14 | CI integration script | ☐ | | | |
 | 15 | Docs + README update | ☐ | | | |
 

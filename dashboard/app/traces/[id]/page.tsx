@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchTrace, type Trace } from "@/lib/api";
+import { AnnotationPanel } from "@/components/annotation-panel";
 
 /* ================================================================
    Helpers
@@ -306,6 +307,11 @@ export default function TraceDetailPage() {
           <div className="glass-panel p-5">
             <JsonViewer data={trace.response_body} title="Response Body" />
           </div>
+        </div>
+
+        {/* Annotations */}
+        <div className="mt-6 animate-slide-up">
+          <AnnotationPanel traceId={trace.id} />
         </div>
       </main>
     </div>

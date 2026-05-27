@@ -53,3 +53,7 @@ gateway/app/db/migrations/versions/__pycache__/
 # Coverage
 coverage/
 *.lcov
+
+# Scratch prompt/plan dumps
+files (*)/
+files (*).zip

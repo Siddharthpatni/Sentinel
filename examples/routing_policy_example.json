@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "Example routing policy payload for POST /api/routing-policies.",
+    "Matches every chat completion that targets gpt-4o, tries the cheap",
+    "model first, falls back to the premium model on HTTP 5xx.",
+    "Up to 3 candidates total; subsequent fallback attempts are rejected",
+    "by the middleware regardless of list length."
+  ],
+  "project_id": "REPLACE_WITH_PROJECT_UUID",
+  "name": "gpt-4o-cost-shaping",
+  "match_jsonpath": "$.model[?(@ == 'gpt-4o')]",
+  "candidates": [
+    { "model": "gpt-4o-mini" },
+    { "model": "gpt-4o" },
+    { "model": "openrouter/anthropic/claude-3-haiku" }
+  ],
+  "fallback_on": {
+    "http_5xx": true
+  },
+  "enabled": true
+}

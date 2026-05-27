@@ -66,3 +66,241 @@ export async function fetchTraceStats(): Promise<TraceStats> {
   if (!res.ok) throw new Error(`Failed to fetch stats: ${res.status}`);
   return res.json();
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Timeseries (Week 10)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface TimeseriesPoint {
+  bucket: string;
+  count: number;
+  cost_usd: number;
+  avg_latency_ms: number;
+}
+
+export interface TimeseriesResponse {
+  bucket: "hour" | "day";
+  points: TimeseriesPoint[];
+}
+
+export async function fetchTraceTimeseries(
+  hours = 24,
+  bucket: "hour" | "day" = "hour",
+): Promise<TimeseriesResponse> {
+  const url = `${API_URL}/api/traces/timeseries?hours=${hours}&bucket=${bucket}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch timeseries: ${res.status}`);
+  return res.json();
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Audit (Week 9 — surfaced in Week 10 UI)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface AuditClassifier {
+  id: string;
+  project_id: string;
+  name: string;
+  match_jsonpath: string;
+  risk_tier: string;
+  enabled: boolean;
+}
+
+export async function fetchClassifiers(projectId?: string): Promise<AuditClassifier[]> {
+  const qs = projectId ? `?project_id=${projectId}` : "";
+  const res = await fetch(`${API_URL}/api/audit/classifiers${qs}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch classifiers: ${res.status}`);
+  const body = await res.json();
+  return body.classifiers;
+}
+
+export async function createClassifier(payload: {
+  project_id: string;
+  name: string;
+  match_jsonpath: string;
+  risk_tier: string;
+}): Promise<AuditClassifier> {
+  const res = await fetch(`${API_URL}/api/audit/classifiers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create classifier: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteClassifier(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/audit/classifiers/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`Failed to delete classifier: ${res.status}`);
+  }
+}
+
+export async function verifyAuditChain(projectId: string): Promise<{
+  ok: boolean;
+  checked: number;
+  error: string | null;
+}> {
+  const res = await fetch(`${API_URL}/api/audit/verify?project_id=${projectId}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Failed to verify: ${res.status}`);
+  return res.json();
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Alerts (Week 10)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface Alert {
+  id: string;
+  project_id: string;
+  name: string;
+  metric: "cost_per_hour_usd" | "error_rate_pct" | "latency_p95_ms";
+  comparator: "gt" | "lt";
+  threshold: number;
+  window_minutes: number;
+  enabled: boolean;
+  last_checked_at: string | null;
+  last_value: number | null;
+  last_triggered: boolean;
+}
+
+export async function fetchAlerts(projectId?: string): Promise<Alert[]> {
+  const qs = projectId ? `?project_id=${projectId}` : "";
+  const res = await fetch(`${API_URL}/api/alerts${qs}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch alerts: ${res.status}`);
+  const body = await res.json();
+  return body.alerts;
+}
+
+export async function createAlert(payload: {
+  project_id: string;
+  name: string;
+  metric: Alert["metric"];
+  comparator: Alert["comparator"];
+  threshold: number;
+  window_minutes: number;
+}): Promise<Alert> {
+  const res = await fetch(`${API_URL}/api/alerts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create alert: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteAlert(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/alerts/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`Failed to delete alert: ${res.status}`);
+  }
+}
+
+export async function checkAlert(id: string): Promise<{
+  alert_id: string;
+  metric: string;
+  value: number;
+  threshold: number;
+  comparator: string;
+  triggered: boolean;
+  checked_at: string;
+}> {
+  const res = await fetch(`${API_URL}/api/alerts/${id}/check`, { method: "POST" });
+  if (!res.ok) throw new Error(`Failed to check alert: ${res.status}`);
+  return res.json();
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Projects helper (Week 10 — needed by audit/alerts pages)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface Project {
+  id: string;
+  name: string;
+  api_key: string;
+}
+
+export async function fetchProjects(): Promise<Project[]> {
+  const res = await fetch(`${API_URL}/api/projects`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
+  const body = await res.json();
+  return body.projects;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Annotations (LangSmith-style human feedback on traces)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface Annotation {
+  id: string;
+  trace_id: string;
+  rating: "thumbs_up" | "thumbs_down" | "neutral";
+  dimension: string;
+  comment: string | null;
+  author: string | null;
+  created_at: string;
+}
+
+export async function fetchAnnotations(traceId: string): Promise<Annotation[]> {
+  const res = await fetch(`${API_URL}/api/annotations?trace_id=${traceId}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Failed to fetch annotations: ${res.status}`);
+  return (await res.json()).annotations;
+}
+
+export async function createAnnotation(payload: {
+  trace_id: string;
+  rating: Annotation["rating"];
+  dimension?: string;
+  comment?: string | null;
+  author?: string | null;
+}): Promise<Annotation> {
+  const res = await fetch(`${API_URL}/api/annotations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create annotation: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteAnnotation(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/annotations/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`Failed to delete annotation: ${res.status}`);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Sessions (conversation threads)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface SessionSummary {
+  id: string;
+  project_id: string;
+  name: string | null;
+  external_id: string;
+  metadata_json: Record<string, unknown>;
+  created_at: string;
+  last_seen_at: string;
+  trace_count: number;
+}
+
+export async function fetchSessions(projectId?: string): Promise<SessionSummary[]> {
+  const qs = projectId ? `?project_id=${projectId}` : "";
+  const res = await fetch(`${API_URL}/api/sessions${qs}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch sessions: ${res.status}`);
+  return (await res.json()).sessions;
+}
+
+export async function fetchSession(id: string): Promise<{
+  session: SessionSummary;
+  trace_ids: string[];
+}> {
+  const res = await fetch(`${API_URL}/api/sessions/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch session: ${res.status}`);
+  return res.json();
+}

@@ -6,6 +6,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -19,6 +20,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+# Portable JSON: real JSONB on Postgres (with all of its querying / indexing
+# benefits), generic JSON on SQLite so the in-memory test DB can still
+# `create_all`. We don't rely on JSONB-specific operators in the ORM layer,
+# so the variant is transparent at the Python level.
+JSONType = JSON().with_variant(JSONB(), "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -76,9 +83,13 @@ class Trace(Base):
         Numeric(12, 6), nullable=False, default=0.0
     )
     status_code: Mapped[int] = mapped_column(Integer, nullable=False, default=200)
-    request_body: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    response_body: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    request_body: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    response_body: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    risk_tier: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -94,6 +105,8 @@ class Trace(Base):
         Index("ix_traces_project_id", "project_id"),
         Index("ix_traces_provider", "provider"),
         Index("ix_traces_model", "model"),
+        Index("ix_traces_risk_tier", "risk_tier"),
+        Index("ix_traces_session_id", "session_id"),
     )
 
     def __repr__(self) -> str:
@@ -159,8 +172,8 @@ class RoutingPolicy(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     match_jsonpath: Mapped[str] = mapped_column(Text, nullable=False)
-    candidates: Mapped[list[dict]] = mapped_column(JSONB, nullable=False)
-    fallback_on: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    candidates: Mapped[list[dict]] = mapped_column(JSONType, nullable=False)
+    fallback_on: Mapped[dict] = mapped_column(JSONType, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     __table_args__ = (Index("ix_routing_policies_project_id", "project_id"),)
@@ -220,15 +233,152 @@ class EvalCase(Base):
         Uuid, ForeignKey("eval_runs.id", ondelete="CASCADE"), nullable=False
     )
     case_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    input: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    expected: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    actual: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    input: Mapped[dict] = mapped_column(JSONType, nullable=False)
+    expected: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    actual: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    assertion_log: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
+    assertion_log: Mapped[list[dict]] = mapped_column(JSONType, nullable=False, default=list)
     trace_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("traces.id", ondelete="SET NULL"), nullable=True
     )
 
     __table_args__ = (
         Index("ix_eval_cases_run_passed", "run_id", "passed"),
+    )
+
+
+class AuditClassifier(Base):
+    """Declarative rule mapping a request shape to an EU-AI-Act risk tier."""
+
+    __tablename__ = "audit_classifiers"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    match_jsonpath: Mapped[str] = mapped_column(Text, nullable=False)
+    risk_tier: Mapped[str] = mapped_column(String(20), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (Index("ix_audit_classifiers_project_id", "project_id"),)
+
+
+class AuditLogEntry(Base):
+    """Append-only audit ledger. Each entry's hash chains to its predecessor.
+
+    The ledger is intentionally separate from `traces` so it can be wiped or
+    archived independently and so deletes on `traces` (cascade from project
+    deletion) leave the audit trail intact.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    sequence: Mapped[int] = mapped_column(Integer, primary_key=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    risk_tier: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    payload: Mapped[dict] = mapped_column(JSONType, nullable=False)
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    entry_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+
+    __table_args__ = (
+        Index("ix_audit_log_project_seq", "project_id", "sequence"),
+        Index("ix_audit_log_created_at", "created_at"),
+        UniqueConstraint("project_id", "sequence", name="uq_audit_log_project_sequence"),
+    )
+
+
+class Alert(Base):
+    """Threshold alert configured per project.
+
+    Alerts are evaluated on demand (`POST /api/alerts/{id}/check`) — no
+    scheduler runs them automatically. Sentinel records the result on the
+    alert row so the dashboard can show a red dot when something tripped.
+    """
+
+    __tablename__ = "alerts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # one of: "cost_per_hour_usd", "error_rate_pct", "latency_p95_ms"
+    metric: Mapped[str] = mapped_column(String(40), nullable=False)
+    # comparison: "gt", "lt"
+    comparator: Mapped[str] = mapped_column(String(4), nullable=False, default="gt")
+    threshold: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
+    # rolling lookback window in minutes
+    window_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_value: Mapped[float | None] = mapped_column(Numeric(14, 4), nullable=True)
+    last_triggered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    __table_args__ = (Index("ix_alerts_project_id", "project_id"),)
+
+
+class TraceAnnotation(Base):
+    """Human feedback on a trace (LangSmith-style thumbs up/down + comment).
+
+    Multiple annotations per trace allowed (different reviewers, different
+    dimensions). The composite index supports the dashboard "show me all
+    annotations for this trace" lookup.
+    """
+
+    __tablename__ = "trace_annotations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    trace_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("traces.id", ondelete="CASCADE"), nullable=False
+    )
+    # "thumbs_up" | "thumbs_down" | "neutral"
+    rating: Mapped[str] = mapped_column(String(20), nullable=False)
+    # free-form dimension label so teams can have multiple rating axes
+    # (e.g. "accuracy", "helpfulness"). Defaults to "overall".
+    dimension: Mapped[str] = mapped_column(String(40), nullable=False, default="overall")
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    author: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (Index("ix_trace_annotations_trace_id", "trace_id"),)
+
+
+class Session(Base):
+    """A conversation thread — group multiple traces into one user session.
+
+    LangSmith calls these "threads". A client tags requests with
+    ``_sentinel.session_id`` and Sentinel persists the mapping, so the
+    dashboard can show the entire conversation chronologically.
+    """
+
+    __tablename__ = "sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # free-form key supplied by the caller (string ID from their app)
+    external_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSONType, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "external_id", name="uq_sessions_project_extid"),
+        Index("ix_sessions_project_last_seen", "project_id", "last_seen_at"),
     )

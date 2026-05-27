@@ -13,7 +13,18 @@ from app.config import settings
 from app.db.models import Base
 from app.db.seed import seed_default_project
 from app.db.session import AsyncSessionLocal, async_engine
-from app.routes import anthropic_compat, openai_compat, traces, verifications
+from app.routes import (
+    alerts,
+    annotations,
+    anthropic_compat,
+    audit,
+    evals,
+    openai_compat,
+    policies,
+    projects,
+    traces,
+    verifications,
+)
 
 
 def configure_logging() -> None:
@@ -83,6 +94,14 @@ app.include_router(openai_compat.router)
 app.include_router(anthropic_compat.router)
 app.include_router(traces.router)
 app.include_router(verifications.router)
+app.include_router(verifications.verifications_router)
+app.include_router(projects.router)
+app.include_router(policies.router)
+app.include_router(evals.router)
+app.include_router(audit.router)
+app.include_router(alerts.router)
+app.include_router(annotations.annotations_router)
+app.include_router(annotations.sessions_router)
 
 
 @app.get("/health")

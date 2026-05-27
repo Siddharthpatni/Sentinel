@@ -7,9 +7,11 @@ import uuid
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
 
-from app.db.models import Project, VerificationRule
+from app.db.models import Project, Verification, VerificationRule
 from app.db.session import AsyncSessionLocal
 from app.verification.schema import (
+    VerificationListResponse,
+    VerificationResponse,
     VerificationRuleCreate,
     VerificationRuleListResponse,
     VerificationRuleResponse,
@@ -17,6 +19,32 @@ from app.verification.schema import (
 )
 
 router = APIRouter(prefix="/api/verification-rules", tags=["verification-rules"])
+verifications_router = APIRouter(prefix="/api/verifications", tags=["verifications"])
+
+
+@verifications_router.get("", response_model=VerificationListResponse)
+async def list_verifications(
+    trace_id: uuid.UUID | None = Query(None),
+    verdict: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+) -> VerificationListResponse:
+    async with AsyncSessionLocal() as session:
+        query = select(Verification).order_by(Verification.created_at.desc())
+        count_query = select(func.count()).select_from(Verification)
+        if trace_id is not None:
+            query = query.where(Verification.trace_id == trace_id)
+            count_query = count_query.where(Verification.trace_id == trace_id)
+        if verdict is not None:
+            query = query.where(Verification.verdict == verdict)
+            count_query = count_query.where(Verification.verdict == verdict)
+        result = await session.execute(query.limit(limit))
+        rows = result.scalars().all()
+        total = (await session.execute(count_query)).scalar_one()
+        return VerificationListResponse(
+            verifications=[VerificationResponse.model_validate(r) for r in rows],
+            next_cursor=None,
+            total_count=total,
+        )
 
 
 @router.post("", response_model=VerificationRuleResponse, status_code=201)

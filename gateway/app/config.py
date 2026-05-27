@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # --- LLM Provider Keys ---
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    openrouter_api_key: str = ""
+
+    # OpenRouter attribution headers (recommended for correct rate-limit tier)
+    openrouter_referer: str = "https://github.com/Siddharthpatni/Sentinel"
+    openrouter_title: str = "Sentinel"
 
     # --- Sentinel ---
     default_project_api_key: str = "sk-sentinel-dev-000"

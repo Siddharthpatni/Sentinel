@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 
 from app.db.models import Trace
@@ -110,6 +112,59 @@ async def get_trace_stats() -> TraceStats:
             traces_by_provider=traces_by_provider,
             traces_by_model=traces_by_model,
             error_count=row.errors,
+        )
+
+
+class TimeseriesPoint(BaseModel):
+    bucket: datetime
+    count: int
+    cost_usd: float
+    avg_latency_ms: float
+
+
+class TimeseriesResponse(BaseModel):
+    bucket: str
+    points: list[TimeseriesPoint]
+
+
+@router.get("/timeseries", response_model=TimeseriesResponse)
+async def get_timeseries(
+    hours: int = Query(24, ge=1, le=720),
+    bucket: str = Query("hour", pattern="^(hour|day)$"),
+    project_id: uuid.UUID | None = Query(None),
+) -> TimeseriesResponse:
+    """Return cost / call-count buckets for the last ``hours``.
+
+    Used by the dashboard cost-over-time sparkline.
+    """
+    since = datetime.now(UTC) - timedelta(hours=hours)
+    trunc = func.date_trunc(bucket, Trace.created_at)
+    async with AsyncSessionLocal() as session:
+        stmt = (
+            select(
+                trunc.label("bucket"),
+                func.count(Trace.id).label("count"),
+                func.coalesce(func.sum(Trace.cost_usd), 0).label("cost"),
+                func.coalesce(func.avg(Trace.latency_ms), 0).label("lat"),
+            )
+            .where(Trace.created_at >= since)
+            .group_by(trunc)
+            .order_by(trunc)
+        )
+        if project_id is not None:
+            stmt = stmt.where(Trace.project_id == project_id)
+        rows = (await session.execute(stmt)).all()
+        return TimeseriesResponse(
+            bucket=bucket,
+            points=[
+                TimeseriesPoint(
+                    bucket=r.bucket,
+                    count=int(r.count),
+                    cost_usd=float(r.cost),
+                    avg_latency_ms=float(r.lat),
+                )
+                for r in rows
+            ],
         )
 
 
