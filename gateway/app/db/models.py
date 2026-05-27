@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     Numeric,
     String,
     Text,
@@ -381,4 +382,39 @@ class Session(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "external_id", name="uq_sessions_project_extid"),
         Index("ix_sessions_project_last_seen", "project_id", "last_seen_at"),
+    )
+
+
+class ProviderCredential(Base):
+    """Project-scoped, encrypted LLM provider API keys (BYOK).
+
+    Each row stores one credential for one provider, encrypted with Fernet
+    using the gateway's master key. The plaintext key never leaves
+    ``keyvault.encrypt`` / ``keyvault.decrypt`` — the rest of the system
+    works with the ciphertext or a short fingerprint suitable for display.
+    """
+
+    __tablename__ = "provider_credentials"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    encrypted_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    key_fingerprint: Mapped[str] = mapped_column(String(32), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id", "provider", "label", name="uq_credentials_project_provider_label"
+        ),
+        Index("ix_credentials_project_provider", "project_id", "provider"),
     )
