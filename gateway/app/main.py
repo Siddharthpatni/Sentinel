@@ -13,7 +13,7 @@ from app.config import settings
 from app.db.models import Base
 from app.db.seed import seed_default_project
 from app.db.session import AsyncSessionLocal, async_engine
-from app.routes import anthropic_compat, openai_compat, traces
+from app.routes import anthropic_compat, openai_compat, traces, verifications
 
 
 def configure_logging() -> None:
@@ -82,6 +82,7 @@ app.add_middleware(
 app.include_router(openai_compat.router)
 app.include_router(anthropic_compat.router)
 app.include_router(traces.router)
+app.include_router(verifications.router)
 
 
 @app.get("/health")

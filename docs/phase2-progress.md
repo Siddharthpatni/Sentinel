@@ -13,7 +13,7 @@
 | # | Step | Status | Commit | Date | Notes |
 |---|------|--------|--------|------|-------|
 | 1 | Migration 002 (5 new tables) | ✓ | (next) | 2026-05-26 | 6 tables created via SQLAlchemy create_all (Phase 1 has no Alembic baseline). See deviations. |
-| 2 | Verification rules model + CRUD | ☐ | | | |
+| 2 | Verification rules model + CRUD | ✓ | (next) | 2026-05-26 | POST/GET/PATCH/DELETE on /api/verification-rules; 6 integration tests written |
 | 3 | Judge module (Jinja2 + structured output) | ☐ | | | |
 | 4 | Verification orchestrator Celery task | ☐ | | | |
 | 5 | `/api/verifications` GET endpoint | ☐ | | | |
