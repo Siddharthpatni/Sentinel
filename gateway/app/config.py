@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     default_project_api_key: str = "sk-sentinel-dev-000"
     default_project_name: str = "default"
 
+    # Fernet master key for encrypting per-project provider credentials at rest.
+    # Generate one with:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    # The default below is a dev-only key — REPLACE in production.
+    sentinel_encryption_key: str = "WAjHM_cvg60vuFrpOGE7qX-m2tCB5raU3w0j6QxrfJA="
+
     # --- Server ---
     gateway_host: str = "0.0.0.0"
     gateway_port: int = 8000
