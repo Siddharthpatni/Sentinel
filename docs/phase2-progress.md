@@ -12,7 +12,7 @@
 
 | # | Step | Status | Commit | Date | Notes |
 |---|------|--------|--------|------|-------|
-| 1 | Migration 002 (5 new tables) | ☐ | | | |
+| 1 | Migration 002 (5 new tables) | ✓ | (next) | 2026-05-26 | 6 tables created via SQLAlchemy create_all (Phase 1 has no Alembic baseline). See deviations. |
 | 2 | Verification rules model + CRUD | ☐ | | | |
 | 3 | Judge module (Jinja2 + structured output) | ☐ | | | |
 | 4 | Verification orchestrator Celery task | ☐ | | | |
@@ -36,7 +36,9 @@ Statuses: ☐ not started · 🔄 in progress · ⏸ blocked · ✓ done
 
 | Date | What changed | Why | Spec section |
 |------|--------------|-----|--------------|
-| | | | |
+| 2026-05-26 | Skipped writing `002_phase_2.py` Alembic migration; added 6 models via SQLAlchemy `create_all` instead | Phase 1 shipped without an Alembic baseline (`gateway/app/db/migrations/versions/` is empty; gateway uses `create_all` on startup). Writing 002 without 001 would break first-run boot. Will retrofit Alembic in a dedicated cleanup step. | §2 |
+| 2026-05-26 | Made `verifications.judge_trace_id` nullable with `ON DELETE SET NULL` | Judge call may not yet exist when the verification row is first written, and we should not cascade-delete a verification when its judge trace is purged. | §2 |
+| 2026-05-26 | Added `UniqueConstraint(project_id, name)` on `evals` instead of `name unique per project` text | Same intent, expressed as a real constraint. | §2 |
 
 ---
 
