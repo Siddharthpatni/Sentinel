@@ -10,9 +10,13 @@ forwarding a request to the upstream LLM provider.
 from __future__ import annotations
 
 import re
+import uuid
+from datetime import UTC, datetime
 from functools import lru_cache
 
 from cryptography.fernet import Fernet, InvalidToken
+from fastapi import HTTPException
+from sqlalchemy import select
 
 from app.config import settings
 
@@ -101,3 +105,60 @@ def redact_event(_logger: object, _method: str, event_dict: dict) -> dict:
                 ik: redact(iv) if isinstance(iv, str) else iv for ik, iv in v.items()
             }
     return event_dict
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Per-project resolution
+# ──────────────────────────────────────────────────────────────────────
+
+_ENV_FALLBACK = {
+    "openai": lambda: settings.openai_api_key,
+    "anthropic": lambda: settings.anthropic_api_key,
+    "openrouter": lambda: settings.openrouter_api_key,
+    "gemini": lambda: "",  # no env var yet — extend Settings if needed
+}
+
+
+async def get_provider_key(project_id: uuid.UUID, provider: str) -> str:
+    """Resolve an API key for ``provider`` scoped to ``project_id``.
+
+    Order of resolution:
+      1. Active ``provider_credentials`` row for this project + provider.
+         Decrypt and return; opportunistically bump ``last_used_at``.
+      2. Env-var fallback from :class:`Settings`.
+      3. Raise :class:`HTTPException(402)` with a helpful message.
+    """
+    # Local imports keep the module importable from places where the ORM
+    # session module hasn't been initialised yet (tests, migrations).
+    from app.db.models import ProviderCredential
+    from app.db.session import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ProviderCredential)
+            .where(
+                ProviderCredential.project_id == project_id,
+                ProviderCredential.provider == provider,
+                ProviderCredential.is_active.is_(True),
+            )
+            .order_by(ProviderCredential.created_at.desc())
+            .limit(1)
+        )
+        cred = result.scalar_one_or_none()
+        if cred is not None:
+            plaintext = decrypt(cred.encrypted_key)
+            cred.last_used_at = datetime.now(UTC)
+            await session.commit()
+            return plaintext
+
+    env_key = _ENV_FALLBACK.get(provider, lambda: "")()
+    if env_key:
+        return env_key
+
+    raise HTTPException(
+        status_code=402,
+        detail=(
+            f"No credentials configured for provider {provider!r}. "
+            f"Add one at /settings/keys."
+        ),
+    )

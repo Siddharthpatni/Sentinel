@@ -14,6 +14,7 @@ from app.config import settings
 from app.db.models import Project
 from app.db.session import AsyncSessionLocal
 from app.providers.anthropic import AnthropicAdapter
+from app.security.keyvault import get_provider_key
 from app.tracing.cost import compute_cost
 from app.tracing.recorder import record_trace
 from app.tracing.schema import TraceCreate
@@ -63,9 +64,8 @@ async def create_message(
     body = await request.json()
     is_stream = body.get("stream", False)
 
-    provider_headers = {
-        "x-provider-key": x_provider_key or settings.anthropic_api_key,
-    }
+    resolved_key = x_provider_key or await get_provider_key(project.id, "anthropic")
+    provider_headers = {"x-provider-key": resolved_key}
 
     if is_stream:
         return await _handle_stream(project, body, provider_headers)

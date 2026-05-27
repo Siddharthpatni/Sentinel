@@ -17,6 +17,7 @@ from app.db.session import AsyncSessionLocal
 from app.providers.openai import OpenAIAdapter
 from app.providers.openrouter import OpenRouterAdapter
 from app.routes.annotations import resolve_session_id
+from app.security.keyvault import get_provider_key
 from app.routing.middleware import (
     apply_candidate,
     consume_candidate,
@@ -105,14 +106,8 @@ async def chat_completions(
     if upstream_model != requested_model:
         body = {**body, "model": upstream_model}
 
-    default_key = (
-        settings.openrouter_api_key
-        if provider_name == "openrouter"
-        else settings.openai_api_key
-    )
-    provider_headers = {
-        "x-provider-key": x_provider_key or default_key,
-    }
+    resolved_key = x_provider_key or await get_provider_key(project.id, provider_name)
+    provider_headers = {"x-provider-key": resolved_key}
 
     if is_stream:
         return await _handle_stream(
