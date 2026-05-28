@@ -10,6 +10,7 @@ const links = [
   { href: "/verifications", label: "Verifications" },
   { href: "/policies", label: "Policies" },
   { href: "/evals", label: "Evals" },
+  { href: "/datasets", label: "Datasets" },
   { href: "/audit", label: "Audit" },
   { href: "/alerts", label: "Alerts" },
   { href: "/settings/keys", label: "Keys" },

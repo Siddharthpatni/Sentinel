@@ -317,3 +317,102 @@ export async function fetchSession(id: string): Promise<{
   if (!res.ok) throw new Error(`Failed to fetch session: ${res.status}`);
   return res.json();
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Datasets (Phase 3 — Session 3)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface Dataset {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  item_count: number;
+}
+
+export interface DatasetItem {
+  id: string;
+  dataset_id: string;
+  input: Record<string, unknown>;
+  expected_output: Record<string, unknown> | null;
+  item_metadata: Record<string, unknown>;
+  source_trace_id: string | null;
+  created_at: string;
+}
+
+export async function fetchDatasets(projectId: string): Promise<Dataset[]> {
+  const res = await fetch(
+    `${API_URL}/api/datasets?project_id=${projectId}`,
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error(`Failed to fetch datasets: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDataset(id: string): Promise<Dataset> {
+  const res = await fetch(`${API_URL}/api/datasets/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch dataset: ${res.status}`);
+  return res.json();
+}
+
+export async function createDataset(payload: {
+  project_id: string;
+  name: string;
+  description?: string | null;
+}): Promise<Dataset> {
+  const res = await fetch(`${API_URL}/api/datasets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create dataset: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteDataset(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/datasets/${id}`, { method: "DELETE" });
+  if (!res.ok && res.status !== 204)
+    throw new Error(`Failed to delete dataset: ${res.status}`);
+}
+
+export async function fetchDatasetItems(
+  datasetId: string,
+): Promise<DatasetItem[]> {
+  const res = await fetch(
+    `${API_URL}/api/datasets/${datasetId}/items`,
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error(`Failed to fetch items: ${res.status}`);
+  return res.json();
+}
+
+export async function addDatasetItem(
+  datasetId: string,
+  payload: {
+    input: Record<string, unknown>;
+    expected_output?: Record<string, unknown> | null;
+    item_metadata?: Record<string, unknown>;
+    source_trace_id?: string | null;
+  },
+): Promise<DatasetItem> {
+  const res = await fetch(`${API_URL}/api/datasets/${datasetId}/items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to add item: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteDatasetItem(
+  datasetId: string,
+  itemId: string,
+): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/datasets/${datasetId}/items/${itemId}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok && res.status !== 204)
+    throw new Error(`Failed to delete item: ${res.status}`);
+}
