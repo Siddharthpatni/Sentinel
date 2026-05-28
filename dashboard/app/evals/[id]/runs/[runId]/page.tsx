@@ -65,28 +65,28 @@ export default function EvalRunDetailPage({
   }, [id, runId]);
 
   return (
-    <main className="p-6 text-neutral-100">
-      <Link href={`/evals/${id}`} className="text-sm text-emerald-400 hover:underline">
+    <main className="p-6 text-fg">
+      <Link href={`/evals/${id}`} className="text-sm text-ok hover:underline">
         ← Back to run history
       </Link>
       <h1 className="text-2xl font-semibold mt-2 mb-1">Run detail</h1>
       {run && (
-        <p className="text-neutral-400 mb-6 text-sm">
+        <p className="text-muted mb-6 text-sm">
           {new Date(run.started_at).toLocaleString()} — {run.passed}/{run.total} passed,{" "}
           {run.failed} failed — triggered by {run.triggered_by}
         </p>
       )}
 
       {error && (
-        <div className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
+        <div className="mb-4 rounded border border-bad bg-bad-soft p-3 text-sm text-bad">
           {error}
         </div>
       )}
-      {loading && <div className="text-sm text-neutral-500">Loading…</div>}
+      {loading && <div className="text-sm text-faint">Loading…</div>}
 
       <div className="space-y-2">
         {cases.map((c) => (
-          <div key={c.id} className="rounded border border-neutral-800 bg-neutral-950">
+          <div key={c.id} className="rounded border border-default bg-bg">
             <button
               onClick={() => setExpanded(expanded === c.id ? null : c.id)}
               className="flex w-full items-center justify-between px-4 py-3 text-left"
@@ -94,12 +94,12 @@ export default function EvalRunDetailPage({
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-block h-2 w-2 rounded-full ${
-                    c.passed ? "bg-emerald-500" : "bg-red-500"
+                    c.passed ? "bg-ok" : "bg-bad"
                   }`}
                 />
                 <span className="font-mono text-sm">{c.case_name}</span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-neutral-400">
+              <div className="flex items-center gap-3 text-xs text-muted">
                 <span>
                   {c.assertion_log.filter((a) => a.passed).length}/{c.assertion_log.length}{" "}
                   assertions
@@ -108,7 +108,7 @@ export default function EvalRunDetailPage({
                   <Link
                     href={`/?trace=${c.trace_id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-emerald-400 hover:underline"
+                    className="text-ok hover:underline"
                   >
                     trace
                   </Link>
@@ -117,14 +117,14 @@ export default function EvalRunDetailPage({
               </div>
             </button>
             {expanded === c.id && (
-              <div className="space-y-3 border-t border-neutral-800 px-4 py-3 text-xs">
+              <div className="space-y-3 border-t border-default px-4 py-3 text-xs">
                 <div>
-                  <div className="mb-1 text-neutral-500">assertions</div>
+                  <div className="mb-1 text-faint">assertions</div>
                   <ul className="space-y-1">
                     {c.assertion_log.map((a, i) => (
                       <li
                         key={i}
-                        className={`font-mono ${a.passed ? "text-emerald-300" : "text-red-300"}`}
+                        className={`font-mono ${a.passed ? "text-ok" : "text-bad"}`}
                       >
                         [{a.passed ? "PASS" : "FAIL"}] {a.type} — {a.detail}
                       </li>
@@ -132,14 +132,14 @@ export default function EvalRunDetailPage({
                   </ul>
                 </div>
                 <details>
-                  <summary className="cursor-pointer text-neutral-400">request</summary>
-                  <pre className="mt-1 overflow-x-auto text-neutral-300">
+                  <summary className="cursor-pointer text-muted">request</summary>
+                  <pre className="mt-1 overflow-x-auto text-fg-soft">
                     {JSON.stringify(c.input, null, 2)}
                   </pre>
                 </details>
                 <details>
-                  <summary className="cursor-pointer text-neutral-400">response</summary>
-                  <pre className="mt-1 overflow-x-auto text-neutral-300">
+                  <summary className="cursor-pointer text-muted">response</summary>
+                  <pre className="mt-1 overflow-x-auto text-fg-soft">
                     {JSON.stringify(c.actual, null, 2)}
                   </pre>
                 </details>

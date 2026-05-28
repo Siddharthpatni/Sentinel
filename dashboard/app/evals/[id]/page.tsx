@@ -49,23 +49,23 @@ export default function EvalRunsPage({ params }: { params: Promise<{ id: string 
   }, [id]);
 
   return (
-    <main className="p-6 text-neutral-100">
-      <Link href="/evals" className="text-sm text-emerald-400 hover:underline">
+    <main className="p-6 text-fg">
+      <Link href="/evals" className="text-sm text-ok hover:underline">
         ← Back to evals
       </Link>
       <h1 className="text-2xl font-semibold mt-2 mb-1">
         {evalRow?.name ?? "Eval"}
       </h1>
-      <p className="text-neutral-400 mb-6 text-sm">Run history</p>
+      <p className="text-muted mb-6 text-sm">Run history</p>
 
       {error && (
-        <div className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
+        <div className="mb-4 rounded border border-bad bg-bad-soft p-3 text-sm text-bad">
           {error}
         </div>
       )}
-      {loading && <div className="text-sm text-neutral-500">Loading…</div>}
+      {loading && <div className="text-sm text-faint">Loading…</div>}
       {!loading && runs.length === 0 && (
-        <div className="rounded border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
+        <div className="rounded border border-default bg-bg p-4 text-sm text-muted">
           No runs yet. Trigger one from the evals page.
         </div>
       )}
@@ -74,22 +74,22 @@ export default function EvalRunsPage({ params }: { params: Promise<{ id: string 
         {runs.map((r) => {
           const passRate = r.total > 0 ? Math.round((r.passed / r.total) * 100) : 0;
           const colour =
-            r.failed === 0 ? "text-emerald-400" : r.passed === 0 ? "text-red-400" : "text-amber-400";
+            r.failed === 0 ? "text-ok" : r.passed === 0 ? "text-bad" : "text-warn";
           return (
             <Link
               key={r.id}
               href={`/evals/${id}/runs/${r.id}`}
-              className="block rounded border border-neutral-800 bg-neutral-950 px-4 py-3 hover:border-emerald-700"
+              className="block rounded border border-default bg-bg px-4 py-3 hover:border-accent"
             >
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <div className="font-mono text-xs text-neutral-500">
+                  <div className="font-mono text-xs text-faint">
                     {new Date(r.started_at).toLocaleString()}
                   </div>
-                  <div className="text-neutral-300">
-                    triggered by <span className="text-neutral-100">{r.triggered_by}</span>
+                  <div className="text-fg-soft">
+                    triggered by <span className="text-fg">{r.triggered_by}</span>
                     {r.git_sha && (
-                      <span className="ml-2 font-mono text-xs text-neutral-500">
+                      <span className="ml-2 font-mono text-xs text-faint">
                         {r.git_sha.slice(0, 7)}
                       </span>
                     )}

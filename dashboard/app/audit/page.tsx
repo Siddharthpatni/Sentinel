@@ -87,21 +87,21 @@ export default function AuditPage() {
     : "#";
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8 text-neutral-200">
+    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8 text-fg">
       <header>
         <h1 className="text-xl font-semibold tracking-tight">EU AI Act Audit</h1>
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-muted">
           Tier classifiers tag inbound requests; the tamper-evident ledger
           records every decision.
         </p>
       </header>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950 p-4">
-        <label className="block text-xs font-medium text-neutral-400">
+      <section className="rounded border border-default bg-bg p-4">
+        <label className="block text-xs font-medium text-muted">
           Project
         </label>
         <select
-          className="mt-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+          className="mt-1 rounded border border-default bg-surface px-2 py-1 text-sm"
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
         >
@@ -114,13 +114,13 @@ export default function AuditPage() {
 
         <div className="mt-3 flex items-center gap-2">
           <button
-            className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+            className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
             onClick={verify}
           >
             Verify chain
           </button>
           <a
-            className="rounded border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-900"
+            className="rounded border border-default px-3 py-1.5 text-sm hover:bg-surface"
             href={exportUrl}
             target="_blank"
             rel="noreferrer"
@@ -132,8 +132,8 @@ export default function AuditPage() {
               className={
                 "ml-2 rounded px-2 py-1 text-xs " +
                 (verifyResult.ok
-                  ? "bg-emerald-950 text-emerald-300"
-                  : "bg-red-950 text-red-300")
+                  ? "bg-ok-soft text-ok"
+                  : "bg-bad-soft text-bad")
               }
             >
               {verifyResult.ok
@@ -144,25 +144,25 @@ export default function AuditPage() {
         </div>
       </section>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950 p-4">
+      <section className="rounded border border-default bg-bg p-4">
         <h2 className="text-sm font-semibold">New classifier</h2>
         <form onSubmit={submit} className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
           <input
-            className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="rounded border border-default bg-surface px-2 py-1 text-sm"
             placeholder="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
           <input
-            className="col-span-2 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm font-mono"
+            className="col-span-2 rounded border border-default bg-surface px-2 py-1 text-sm font-mono"
             placeholder="$.messages[?(@.role == 'user')]"
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             required
           />
           <select
-            className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="rounded border border-default bg-surface px-2 py-1 text-sm"
             value={tier}
             onChange={(e) => setTier(e.target.value as (typeof TIERS)[number])}
           >
@@ -179,13 +179,13 @@ export default function AuditPage() {
           >
             {submitting ? "Creating…" : "Create classifier"}
           </button>
-          {err && <div className="col-span-full text-xs text-red-400">{err}</div>}
+          {err && <div className="col-span-full text-xs text-bad">{err}</div>}
         </form>
       </section>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950">
+      <section className="rounded border border-default bg-bg">
         <table className="w-full text-sm">
-          <thead className="text-xs text-neutral-400">
+          <thead className="text-xs text-muted">
             <tr>
               <th className="px-4 py-2 text-left">Name</th>
               <th className="px-4 py-2 text-left">Pattern</th>
@@ -197,25 +197,25 @@ export default function AuditPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-3 text-neutral-500" colSpan={5}>
+                <td className="px-4 py-3 text-faint" colSpan={5}>
                   Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-neutral-500" colSpan={5}>
+                <td className="px-4 py-3 text-faint" colSpan={5}>
                   No classifiers yet.
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className="border-t border-neutral-900">
+                <tr key={r.id} className="border-t border-subtle">
                   <td className="px-4 py-2 font-medium">{r.name}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-neutral-300">
+                  <td className="px-4 py-2 font-mono text-xs text-fg-soft">
                     {r.match_jsonpath}
                   </td>
                   <td className="px-4 py-2">
-                    <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs">
+                    <span className="rounded bg-surface-1 px-2 py-0.5 text-xs">
                       {r.risk_tier}
                     </span>
                   </td>
@@ -225,7 +225,7 @@ export default function AuditPage() {
                   <td className="px-4 py-2">
                     <button
                       onClick={() => remove(r.id)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-bad hover:text-bad"
                     >
                       delete
                     </button>

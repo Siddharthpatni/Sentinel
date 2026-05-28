@@ -62,7 +62,7 @@ export default function SessionsPage() {
         </span>
         <div className="ml-auto">
           <select
-            className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-sm text-neutral-100"
+            className="bg-surface border border-default rounded px-2 py-1 text-sm text-fg"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
           >
@@ -79,24 +79,24 @@ export default function SessionsPage() {
       <div className="glass-panel overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left border-b border-neutral-800">
-              <th className="px-4 py-3 text-neutral-400 font-medium">Name</th>
-              <th className="px-4 py-3 text-neutral-400 font-medium">External ID</th>
-              <th className="px-4 py-3 text-neutral-400 font-medium">Traces</th>
-              <th className="px-4 py-3 text-neutral-400 font-medium">Last seen</th>
-              <th className="px-4 py-3 text-neutral-400 font-medium">Created</th>
+            <tr className="text-left border-b border-default">
+              <th className="px-4 py-3 text-muted font-medium">Name</th>
+              <th className="px-4 py-3 text-muted font-medium">External ID</th>
+              <th className="px-4 py-3 text-muted font-medium">Traces</th>
+              <th className="px-4 py-3 text-muted font-medium">Last seen</th>
+              <th className="px-4 py-3 text-muted font-medium">Created</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-faint">
                   Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-faint">
                   No sessions yet. Tag a request with{" "}
                   <code>extra_body=&#123;&quot;_sentinel&quot;: &#123;&quot;session_id&quot;: &quot;…&quot;&#125;&#125;</code>.
                 </td>
@@ -105,24 +105,24 @@ export default function SessionsPage() {
               rows.map((s) => (
                 <tr
                   key={s.id}
-                  className="border-b border-neutral-900 hover:bg-neutral-900/40"
+                  className="border-b border-subtle hover:bg-surface/40"
                 >
                   <td className="px-4 py-3">
                     <Link
                       href={`/sessions/${s.id}`}
-                      className="text-emerald-400 hover:underline"
+                      className="text-ok hover:underline"
                     >
-                      {s.name || <span className="text-neutral-500">(unnamed)</span>}
+                      {s.name || <span className="text-faint">(unnamed)</span>}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-neutral-300">
+                  <td className="px-4 py-3 font-mono text-xs text-fg-soft">
                     {s.external_id}
                   </td>
-                  <td className="px-4 py-3 text-neutral-200">{s.trace_count}</td>
-                  <td className="px-4 py-3 text-neutral-400">
+                  <td className="px-4 py-3 text-fg">{s.trace_count}</td>
+                  <td className="px-4 py-3 text-muted">
                     {formatDate(s.last_seen_at)}
                   </td>
-                  <td className="px-4 py-3 text-neutral-500">
+                  <td className="px-4 py-3 text-faint">
                     {formatDate(s.created_at)}
                   </td>
                 </tr>

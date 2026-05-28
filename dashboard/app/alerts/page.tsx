@@ -86,21 +86,21 @@ export default function AlertsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8 text-neutral-200">
+    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8 text-fg">
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Alerts</h1>
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-muted">
           Threshold checks over a rolling window. Evaluated on demand — click
           <span className="mx-1 font-mono">check</span> to refresh a row.
         </p>
       </header>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950 p-4">
-        <label className="block text-xs font-medium text-neutral-400">
+      <section className="rounded border border-default bg-bg p-4">
+        <label className="block text-xs font-medium text-muted">
           Project
         </label>
         <select
-          className="mt-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+          className="mt-1 rounded border border-default bg-surface px-2 py-1 text-sm"
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
         >
@@ -112,18 +112,18 @@ export default function AlertsPage() {
         </select>
       </section>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950 p-4">
+      <section className="rounded border border-default bg-bg p-4">
         <h2 className="text-sm font-semibold">New alert</h2>
         <form onSubmit={submit} className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-6">
           <input
-            className="md:col-span-2 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="md:col-span-2 rounded border border-default bg-surface px-2 py-1 text-sm"
             placeholder="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
           <select
-            className="md:col-span-2 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="md:col-span-2 rounded border border-default bg-surface px-2 py-1 text-sm"
             value={metric}
             onChange={(e) => setMetric(e.target.value as Alert["metric"])}
           >
@@ -134,7 +134,7 @@ export default function AlertsPage() {
             ))}
           </select>
           <select
-            className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="rounded border border-default bg-surface px-2 py-1 text-sm"
             value={comparator}
             onChange={(e) => setComparator(e.target.value as Alert["comparator"])}
           >
@@ -144,7 +144,7 @@ export default function AlertsPage() {
           <input
             type="number"
             step="0.01"
-            className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+            className="rounded border border-default bg-surface px-2 py-1 text-sm"
             placeholder="threshold"
             value={threshold}
             onChange={(e) => setThreshold(e.target.value)}
@@ -156,7 +156,7 @@ export default function AlertsPage() {
               type="number"
               min={1}
               max={10080}
-              className="w-24 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm"
+              className="w-24 rounded border border-default bg-surface px-2 py-1 text-sm"
               value={window}
               onChange={(e) => setWindow(parseInt(e.target.value, 10) || 60)}
             />
@@ -169,13 +169,13 @@ export default function AlertsPage() {
           >
             {submitting ? "Creating…" : "Create alert"}
           </button>
-          {err && <div className="col-span-full text-xs text-red-400">{err}</div>}
+          {err && <div className="col-span-full text-xs text-bad">{err}</div>}
         </form>
       </section>
 
-      <section className="rounded border border-neutral-800 bg-neutral-950">
+      <section className="rounded border border-default bg-bg">
         <table className="w-full text-sm">
-          <thead className="text-xs text-neutral-400">
+          <thead className="text-xs text-muted">
             <tr>
               <th className="px-4 py-2 text-left">Name</th>
               <th className="px-4 py-2 text-left">Metric</th>
@@ -189,19 +189,19 @@ export default function AlertsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-4 py-3 text-neutral-500" colSpan={7}>
+                <td className="px-4 py-3 text-faint" colSpan={7}>
                   Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-neutral-500" colSpan={7}>
+                <td className="px-4 py-3 text-faint" colSpan={7}>
                   No alerts yet.
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.id} className="border-t border-neutral-900">
+                <tr key={r.id} className="border-t border-subtle">
                   <td className="px-4 py-2 font-medium">{r.name}</td>
                   <td className="px-4 py-2 font-mono text-xs">{r.metric}</td>
                   <td className="px-4 py-2 font-mono text-xs">
@@ -215,13 +215,13 @@ export default function AlertsPage() {
                   </td>
                   <td className="px-4 py-2">
                     {r.last_checked_at === null ? (
-                      <span className="text-xs text-neutral-500">unchecked</span>
+                      <span className="text-xs text-faint">unchecked</span>
                     ) : r.last_triggered ? (
-                      <span className="rounded bg-red-950 px-2 py-0.5 text-xs text-red-300">
+                      <span className="rounded bg-bad-soft px-2 py-0.5 text-xs text-bad">
                         triggered
                       </span>
                     ) : (
-                      <span className="rounded bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">
+                      <span className="rounded bg-ok-soft px-2 py-0.5 text-xs text-ok">
                         ok
                       </span>
                     )}
@@ -235,7 +235,7 @@ export default function AlertsPage() {
                     </button>
                     <button
                       onClick={() => remove(r.id)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-bad hover:text-bad"
                     >
                       delete
                     </button>

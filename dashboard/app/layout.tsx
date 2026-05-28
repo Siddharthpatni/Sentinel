@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     "Real-time observability for your LLM API calls. Track cost, latency, and usage across OpenAI, Anthropic, and more.",
 };
 
+const themeInitScript = `(function(){try{var s=localStorage.getItem('sentinel-theme');var t=s==='light'||s==='dark'?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,8 +30,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-bg text-fg">
         <NavBar />
         {children}
       </body>

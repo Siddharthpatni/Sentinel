@@ -111,28 +111,28 @@ export default function EvalsPage() {
   }
 
   return (
-    <main className="p-6 text-neutral-100">
+    <main className="p-6 text-fg">
       <h1 className="text-2xl font-semibold mb-1">Evals</h1>
-      <p className="text-neutral-400 mb-6 text-sm">
+      <p className="text-muted mb-6 text-sm">
         YAML-defined regression suites. Parser + 7 assertion types live now;
         runner + CI script land in Steps 11–14.
       </p>
 
       {error && (
-        <div className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
+        <div className="mb-4 rounded border border-bad bg-bad-soft p-3 text-sm text-bad">
           {error}
         </div>
       )}
 
-      <section className="mb-8 rounded border border-neutral-800 bg-neutral-950 p-4">
+      <section className="mb-8 rounded border border-default bg-bg p-4">
         <h2 className="text-lg font-medium mb-3">Create or update a suite</h2>
         <form onSubmit={handleCreate} className="space-y-3 text-sm">
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Project</span>
+            <span className="text-muted">Project</span>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="w-64 rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="w-64 rounded border border-default bg-surface px-2 py-1"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -142,7 +142,7 @@ export default function EvalsPage() {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">
+            <span className="text-muted">
               YAML suite (validated server-side; upsert on suite name)
             </span>
             <textarea
@@ -150,13 +150,13 @@ export default function EvalsPage() {
               rows={14}
               value={yaml}
               onChange={(e) => setYaml(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-xs"
+              className="rounded border border-default bg-surface px-3 py-2 font-mono text-xs"
             />
           </label>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+            className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent disabled:opacity-50"
           >
             {submitting ? "Saving…" : "Save suite"}
           </button>
@@ -165,9 +165,9 @@ export default function EvalsPage() {
 
       <section>
         <h2 className="text-lg font-medium mb-2">Suites ({evals.length})</h2>
-        {loading && <div className="text-sm text-neutral-500">Loading…</div>}
+        {loading && <div className="text-sm text-faint">Loading…</div>}
         {!loading && evals.length === 0 && (
-          <div className="rounded border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
+          <div className="rounded border border-default bg-bg p-4 text-sm text-muted">
             No suites yet. Paste a YAML suite above to get started.
           </div>
         )}
@@ -175,38 +175,38 @@ export default function EvalsPage() {
           {evals.map((e) => (
             <div
               key={e.id}
-              className="rounded border border-neutral-800 bg-neutral-950"
+              className="rounded border border-default bg-bg"
             >
               <div className="flex items-center justify-between px-4 py-3">
                 <button
                   onClick={() => setExpanded(expanded === e.id ? null : e.id)}
-                  className="font-mono text-sm font-semibold text-left hover:text-emerald-300"
+                  className="font-mono text-sm font-semibold text-left hover:text-ok"
                 >
                   {expanded === e.id ? "▾" : "▸"} {e.name}
                 </button>
                 <div className="flex items-center gap-3 text-xs">
                   <Link
                     href={`/evals/${e.id}`}
-                    className="rounded border border-neutral-700 px-2 py-0.5 text-neutral-300 hover:bg-neutral-800"
+                    className="rounded border border-default px-2 py-0.5 text-fg-soft hover:bg-surface-1"
                   >
                     runs
                   </Link>
                   <button
                     onClick={() => runEval(e)}
-                    className="rounded bg-emerald-700 px-2 py-0.5 text-white hover:bg-emerald-600"
+                    className="rounded bg-accent px-2 py-0.5 text-white hover:bg-accent"
                   >
                     run now
                   </button>
                   <button
                     onClick={() => remove(e)}
-                    className="text-red-400 hover:text-red-300"
+                    className="text-bad hover:text-bad"
                   >
                     delete
                   </button>
                 </div>
               </div>
               {expanded === e.id && (
-                <pre className="border-t border-neutral-800 bg-neutral-950 px-4 py-3 text-xs text-neutral-300 overflow-x-auto">
+                <pre className="border-t border-default bg-bg px-4 py-3 text-xs text-fg-soft overflow-x-auto">
                   {e.yaml_source}
                 </pre>
               )}

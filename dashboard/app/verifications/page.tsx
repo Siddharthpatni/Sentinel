@@ -124,27 +124,27 @@ export default function VerificationsPage() {
   }
 
   return (
-    <main className="p-6 text-neutral-100">
+    <main className="p-6 text-fg">
       <h1 className="text-2xl font-semibold mb-1">Verifications</h1>
-      <p className="text-neutral-400 mb-6 text-sm">
+      <p className="text-muted mb-6 text-sm">
         Judge-model evaluations of primary calls. Phase 2 — Step 2 of 15.
       </p>
 
       {error && (
-        <div className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
+        <div className="mb-4 rounded border border-bad bg-bad-soft p-3 text-sm text-bad">
           {error}
         </div>
       )}
 
-      <section className="mb-8 rounded border border-neutral-800 bg-neutral-950 p-4">
+      <section className="mb-8 rounded border border-default bg-bg p-4">
         <h2 className="text-lg font-medium mb-3">Create rule</h2>
         <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3 text-sm">
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Project</span>
+            <span className="text-muted">Project</span>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="rounded border border-default bg-surface px-2 py-1"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -154,26 +154,26 @@ export default function VerificationsPage() {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Name</span>
+            <span className="text-muted">Name</span>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="answer-quality"
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="rounded border border-default bg-surface px-2 py-1"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Match JSONPath</span>
+            <span className="text-muted">Match JSONPath</span>
             <input
               required
               value={jsonpath}
               onChange={(e) => setJsonpath(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono"
+              className="rounded border border-default bg-surface px-2 py-1 font-mono"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Sample rate (0–1)</span>
+            <span className="text-muted">Sample rate (0–1)</span>
             <input
               required
               type="number"
@@ -182,33 +182,33 @@ export default function VerificationsPage() {
               max="1"
               value={sampleRate}
               onChange={(e) => setSampleRate(parseFloat(e.target.value))}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="rounded border border-default bg-surface px-2 py-1"
             />
           </label>
           <label className="flex flex-col gap-1 col-span-2">
-            <span className="text-neutral-400">Judge model</span>
+            <span className="text-muted">Judge model</span>
             <input
               required
               value={judgeModel}
               onChange={(e) => setJudgeModel(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono"
+              className="rounded border border-default bg-surface px-2 py-1 font-mono"
             />
           </label>
           <label className="flex flex-col gap-1 col-span-2">
-            <span className="text-neutral-400">Judge prompt template</span>
+            <span className="text-muted">Judge prompt template</span>
             <textarea
               required
               rows={4}
               value={template}
               onChange={(e) => setTemplate(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono text-xs"
+              className="rounded border border-default bg-surface px-2 py-1 font-mono text-xs"
             />
           </label>
           <div className="col-span-2">
             <button
               type="submit"
               disabled={submitting}
-              className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+              className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create rule"}
             </button>
@@ -221,16 +221,16 @@ export default function VerificationsPage() {
           Verification rules ({rules.length})
         </h2>
         {loading && (
-          <div className="text-sm text-neutral-500">Loading…</div>
+          <div className="text-sm text-faint">Loading…</div>
         )}
         {!loading && rules.length === 0 && (
-          <div className="rounded border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
+          <div className="rounded border border-default bg-bg p-4 text-sm text-muted">
             No rules yet. Create one above.
           </div>
         )}
         {rules.length > 0 && (
-          <table className="w-full text-sm border border-neutral-800 rounded">
-            <thead className="bg-neutral-900 text-neutral-400 text-left">
+          <table className="w-full text-sm border border-default rounded">
+            <thead className="bg-surface text-muted text-left">
               <tr>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Judge model</th>
@@ -241,7 +241,7 @@ export default function VerificationsPage() {
             </thead>
             <tbody>
               {rules.map((r) => (
-                <tr key={r.id} className="border-t border-neutral-800">
+                <tr key={r.id} className="border-t border-default">
                   <td className="px-3 py-2 font-mono">{r.name}</td>
                   <td className="px-3 py-2">{r.judge_model}</td>
                   <td className="px-3 py-2">{r.sample_rate}</td>
@@ -250,8 +250,8 @@ export default function VerificationsPage() {
                       onClick={() => toggleRule(r)}
                       className={
                         r.enabled
-                          ? "rounded bg-emerald-900/40 px-2 py-0.5 text-emerald-300 hover:bg-emerald-900/60"
-                          : "rounded bg-neutral-800 px-2 py-0.5 text-neutral-400 hover:bg-neutral-700"
+                          ? "rounded bg-ok-soft px-2 py-0.5 text-ok hover:bg-ok-soft"
+                          : "rounded bg-surface-1 px-2 py-0.5 text-muted hover:bg-surface-2"
                       }
                     >
                       {r.enabled ? "on" : "off"}
@@ -260,7 +260,7 @@ export default function VerificationsPage() {
                   <td className="px-3 py-2 text-right">
                     <button
                       onClick={() => deleteRule(r)}
-                      className="text-red-400 hover:text-red-300"
+                      className="text-bad hover:text-bad"
                     >
                       Delete
                     </button>

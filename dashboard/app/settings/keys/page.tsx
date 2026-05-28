@@ -134,14 +134,14 @@ export default function KeysPage() {
     <div className="mx-auto max-w-5xl p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-100">Provider keys</h1>
-          <p className="mt-1 text-sm text-neutral-400">
+          <h1 className="text-2xl font-semibold text-fg">Provider keys</h1>
+          <p className="mt-1 text-sm text-muted">
             Encrypted at rest with Fernet. Plaintext is never echoed back to the dashboard.
           </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          className="rounded bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Add key
         </button>
@@ -149,11 +149,11 @@ export default function KeysPage() {
 
       {projects.length > 1 && (
         <div className="mb-4">
-          <label className="mr-2 text-sm text-neutral-400">Project:</label>
+          <label className="mr-2 text-sm text-muted">Project:</label>
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-100"
+            className="rounded border border-default bg-surface px-3 py-1.5 text-sm text-fg"
           >
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -162,16 +162,16 @@ export default function KeysPage() {
         </div>
       )}
 
-      {error && <div className="mb-4 rounded bg-red-950 p-3 text-sm text-red-200">{error}</div>}
+      {error && <div className="mb-4 rounded bg-bad-soft p-3 text-sm text-bad">{error}</div>}
       {loading ? (
-        <div className="text-neutral-500">Loading…</div>
+        <div className="text-faint">Loading…</div>
       ) : creds.length === 0 ? (
-        <div className="rounded border border-dashed border-neutral-700 p-12 text-center text-neutral-500">
-          No keys configured. Click <span className="text-neutral-300">Add key</span> to get started.
+        <div className="rounded border border-dashed border-default p-12 text-center text-faint">
+          No keys configured. Click <span className="text-fg-soft">Add key</span> to get started.
         </div>
       ) : (
         <table className="w-full text-sm">
-          <thead className="border-b border-neutral-800 text-left text-xs uppercase tracking-wider text-neutral-500">
+          <thead className="border-b border-default text-left text-xs uppercase tracking-wider text-faint">
             <tr>
               <th className="py-2 pr-4">Provider</th>
               <th className="py-2 pr-4">Label</th>
@@ -185,16 +185,16 @@ export default function KeysPage() {
             {creds.map((c) => {
               const t = testResults[c.id];
               return (
-                <tr key={c.id} className="border-b border-neutral-900">
-                  <td className="py-3 pr-4 font-medium text-neutral-100">{c.provider}</td>
-                  <td className="py-3 pr-4 text-neutral-300">{c.label}</td>
-                  <td className="py-3 pr-4 font-mono text-xs text-neutral-400">{c.key_fingerprint}</td>
+                <tr key={c.id} className="border-b border-subtle">
+                  <td className="py-3 pr-4 font-medium text-fg">{c.provider}</td>
+                  <td className="py-3 pr-4 text-fg-soft">{c.label}</td>
+                  <td className="py-3 pr-4 font-mono text-xs text-muted">{c.key_fingerprint}</td>
                   <td className="py-3 pr-4">
                     <span
                       className={
                         c.is_active
-                          ? "rounded bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-300"
-                          : "rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400"
+                          ? "rounded bg-ok-soft px-2 py-0.5 text-xs text-ok"
+                          : "rounded bg-surface-1 px-2 py-0.5 text-xs text-muted"
                       }
                     >
                       {c.is_active ? "active" : "disabled"}
@@ -202,7 +202,7 @@ export default function KeysPage() {
                     {t && (
                       <span
                         className={
-                          "ml-2 text-xs " + (t.ok ? "text-emerald-400" : "text-red-400")
+                          "ml-2 text-xs " + (t.ok ? "text-ok" : "text-bad")
                         }
                         title={t.message}
                       >
@@ -210,26 +210,26 @@ export default function KeysPage() {
                       </span>
                     )}
                   </td>
-                  <td className="py-3 pr-4 text-xs text-neutral-500">
+                  <td className="py-3 pr-4 text-xs text-faint">
                     {c.last_used_at ? new Date(c.last_used_at).toLocaleString() : "—"}
                   </td>
                   <td className="py-3 text-right">
                     <button
                       onClick={() => handleTest(c.id)}
                       disabled={testing[c.id]}
-                      className="mr-2 text-xs text-neutral-400 hover:text-neutral-100"
+                      className="mr-2 text-xs text-muted hover:text-fg"
                     >
                       {testing[c.id] ? "testing…" : "test"}
                     </button>
                     <button
                       onClick={() => handleToggle(c)}
-                      className="mr-2 text-xs text-neutral-400 hover:text-neutral-100"
+                      className="mr-2 text-xs text-muted hover:text-fg"
                     >
                       {c.is_active ? "disable" : "enable"}
                     </button>
                     <button
                       onClick={() => handleDelete(c.id)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-bad hover:text-bad"
                     >
                       delete
                     </button>
@@ -242,34 +242,34 @@ export default function KeysPage() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/60">
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-bg/60">
           <form
             onSubmit={handleCreate}
-            className="w-full max-w-md rounded-lg border border-neutral-800 bg-neutral-950 p-6"
+            className="w-full max-w-md rounded-lg border border-default bg-bg p-6"
           >
-            <h2 className="mb-4 text-lg font-semibold text-neutral-100">Add provider key</h2>
-            <label className="mb-3 block text-xs text-neutral-400">
+            <h2 className="mb-4 text-lg font-semibold text-fg">Add provider key</h2>
+            <label className="mb-3 block text-xs text-muted">
               Provider
               <select
                 value={formProvider}
                 onChange={(e) => setFormProvider(e.target.value)}
-                className="mt-1 w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100"
+                className="mt-1 w-full rounded border border-default bg-surface px-3 py-2 text-sm text-fg"
               >
                 {PROVIDERS.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
             </label>
-            <label className="mb-3 block text-xs text-neutral-400">
+            <label className="mb-3 block text-xs text-muted">
               Label
               <input
                 value={formLabel}
                 onChange={(e) => setFormLabel(e.target.value)}
                 required
-                className="mt-1 w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100"
+                className="mt-1 w-full rounded border border-default bg-surface px-3 py-2 text-sm text-fg"
               />
             </label>
-            <label className="mb-3 block text-xs text-neutral-400">
+            <label className="mb-3 block text-xs text-muted">
               API key
               <input
                 type="password"
@@ -278,27 +278,27 @@ export default function KeysPage() {
                 required
                 minLength={8}
                 placeholder="sk-..."
-                className="mt-1 w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-sm text-neutral-100"
+                className="mt-1 w-full rounded border border-default bg-surface px-3 py-2 font-mono text-sm text-fg"
               />
-              <span className="mt-1 block text-[10px] text-neutral-500">
+              <span className="mt-1 block text-[10px] text-faint">
                 Encrypted with Fernet before storage. Only the fingerprint is shown afterwards.
               </span>
             </label>
             {modalError && (
-              <div className="mb-3 rounded bg-red-950 p-2 text-xs text-red-200">{modalError}</div>
+              <div className="mb-3 rounded bg-bad-soft p-2 text-xs text-bad">{modalError}</div>
             )}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded px-3 py-1.5 text-sm text-neutral-400 hover:text-neutral-100"
+                className="rounded px-3 py-1.5 text-sm text-muted hover:text-fg"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {submitting ? "Saving…" : "Save"}
               </button>

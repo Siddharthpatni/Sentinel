@@ -78,8 +78,8 @@ export function AnnotationPanel({ traceId }: { traceId: string }) {
             className={
               "px-3 py-1.5 rounded text-sm border transition " +
               (rating === r.value
-                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-200"
-                : "bg-neutral-900 border-neutral-700 text-neutral-300 hover:border-neutral-500")
+                ? "bg-ok-soft border-ok text-ok"
+                : "bg-surface border-default text-fg-soft hover:border-default hover:text-fg")
             }
           >
             {r.emoji} {r.label}
@@ -89,20 +89,20 @@ export function AnnotationPanel({ traceId }: { traceId: string }) {
 
       <div className="grid grid-cols-2 gap-2 mb-2">
         <input
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100"
+          className="bg-surface border border-default rounded px-2 py-1.5 text-sm text-fg"
           placeholder="Dimension (e.g. overall, accuracy)"
           value={dimension}
           onChange={(e) => setDimension(e.target.value)}
         />
         <input
-          className="bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100"
+          className="bg-surface border border-default rounded px-2 py-1.5 text-sm text-fg"
           placeholder="Your name (optional)"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
         />
       </div>
       <textarea
-        className="w-full bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100 mb-2"
+        className="w-full bg-surface border border-default rounded px-2 py-1.5 text-sm text-fg mb-2"
         placeholder="Comment (optional)"
         rows={2}
         value={comment}
@@ -116,14 +116,14 @@ export function AnnotationPanel({ traceId }: { traceId: string }) {
       >
         {submitting ? "Submitting…" : "Submit feedback"}
       </button>
-      {err && <p className="text-red-400 text-xs mt-2">{err}</p>}
+      {err && <p className="text-bad text-xs mt-2">{err}</p>}
 
       {rows.length > 0 && (
-        <ul className="mt-5 space-y-2 border-t border-neutral-800 pt-3">
+        <ul className="mt-5 space-y-2 border-t border-default pt-3">
           {rows.map((a) => (
             <li
               key={a.id}
-              className="flex items-start gap-3 text-sm border border-neutral-800 rounded p-2"
+              className="flex items-start gap-3 text-sm border border-default rounded p-2"
             >
               <span className="text-lg leading-none">
                 {a.rating === "thumbs_up"
@@ -133,22 +133,22 @@ export function AnnotationPanel({ traceId }: { traceId: string }) {
                     : "○"}
               </span>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-neutral-500">
-                  <span className="text-neutral-300">{a.author || "anon"}</span>
+                <div className="text-xs text-faint">
+                  <span className="text-fg-soft">{a.author || "anon"}</span>
                   {" · "}
                   <span>{a.dimension}</span>
                   {" · "}
                   <span>{new Date(a.created_at).toLocaleString()}</span>
                 </div>
                 {a.comment && (
-                  <div className="text-neutral-200 mt-0.5 break-words">
+                  <div className="text-fg mt-0.5 break-words">
                     {a.comment}
                   </div>
                 )}
               </div>
               <button
                 type="button"
-                className="text-xs text-neutral-500 hover:text-red-400"
+                className="text-xs text-faint hover:text-bad"
                 onClick={() => remove(a.id)}
               >
                 Delete

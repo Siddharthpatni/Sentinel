@@ -119,28 +119,28 @@ export default function PoliciesPage() {
   }
 
   return (
-    <main className="p-6 text-neutral-100">
+    <main className="p-6 text-fg">
       <h1 className="text-2xl font-semibold mb-1">Routing policies</h1>
-      <p className="text-neutral-400 mb-6 text-sm">
+      <p className="text-muted mb-6 text-sm">
         Pick the cheapest candidate model and fall back on failure. Middleware
         wiring is Step 8 — this page manages the rules.
       </p>
 
       {error && (
-        <div className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-300">
+        <div className="mb-4 rounded border border-bad bg-bad-soft p-3 text-sm text-bad">
           {error}
         </div>
       )}
 
-      <section className="mb-8 rounded border border-neutral-800 bg-neutral-950 p-4">
+      <section className="mb-8 rounded border border-default bg-bg p-4">
         <h2 className="text-lg font-medium mb-3">Create policy</h2>
         <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3 text-sm">
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Project</span>
+            <span className="text-muted">Project</span>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="rounded border border-default bg-surface px-2 py-1"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -150,26 +150,26 @@ export default function PoliciesPage() {
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-neutral-400">Name</span>
+            <span className="text-muted">Name</span>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="cheap-first"
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+              className="rounded border border-default bg-surface px-2 py-1"
             />
           </label>
           <label className="flex flex-col gap-1 col-span-2">
-            <span className="text-neutral-400">Match JSONPath (against request body)</span>
+            <span className="text-muted">Match JSONPath (against request body)</span>
             <input
               required
               value={jsonpath}
               onChange={(e) => setJsonpath(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono"
+              className="rounded border border-default bg-surface px-2 py-1 font-mono"
             />
           </label>
           <label className="flex flex-col gap-1 col-span-2">
-            <span className="text-neutral-400">
+            <span className="text-muted">
               Candidate models (one per line, in fallback order)
             </span>
             <textarea
@@ -177,7 +177,7 @@ export default function PoliciesPage() {
               rows={3}
               value={candidatesText}
               onChange={(e) => setCandidatesText(e.target.value)}
-              className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 font-mono text-xs"
+              className="rounded border border-default bg-surface px-2 py-1 font-mono text-xs"
             />
           </label>
           <div className="col-span-2 flex flex-wrap gap-4 text-sm">
@@ -207,7 +207,7 @@ export default function PoliciesPage() {
                 value={lowConf}
                 onChange={(e) => setLowConf(e.target.value)}
                 placeholder="(off)"
-                className="w-20 rounded border border-neutral-700 bg-neutral-900 px-2 py-1"
+                className="w-20 rounded border border-default bg-surface px-2 py-1"
               />
             </label>
           </div>
@@ -215,7 +215,7 @@ export default function PoliciesPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+              className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create policy"}
             </button>
@@ -225,9 +225,9 @@ export default function PoliciesPage() {
 
       <section>
         <h2 className="text-lg font-medium mb-2">Policies ({policies.length})</h2>
-        {loading && <div className="text-sm text-neutral-500">Loading…</div>}
+        {loading && <div className="text-sm text-faint">Loading…</div>}
         {!loading && policies.length === 0 && (
-          <div className="rounded border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-400">
+          <div className="rounded border border-default bg-bg p-4 text-sm text-muted">
             No policies yet. Create one above.
           </div>
         )}
@@ -235,7 +235,7 @@ export default function PoliciesPage() {
           {policies.map((p) => (
             <div
               key={p.id}
-              className="rounded border border-neutral-800 bg-neutral-950 p-4"
+              className="rounded border border-default bg-bg p-4"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="font-mono text-sm font-semibold">{p.name}</div>
@@ -244,32 +244,32 @@ export default function PoliciesPage() {
                     onClick={() => toggle(p)}
                     className={
                       p.enabled
-                        ? "rounded bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-300"
-                        : "rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400"
+                        ? "rounded bg-ok-soft px-2 py-0.5 text-xs text-ok"
+                        : "rounded bg-surface-1 px-2 py-0.5 text-xs text-muted"
                     }
                   >
                     {p.enabled ? "on" : "off"}
                   </button>
                   <button
                     onClick={() => remove(p)}
-                    className="text-xs text-red-400 hover:text-red-300"
+                    className="text-xs text-bad hover:text-bad"
                   >
                     delete
                   </button>
                 </div>
               </div>
-              <div className="text-xs text-neutral-400 mb-2 font-mono">
+              <div className="text-xs text-muted mb-2 font-mono">
                 {p.match_jsonpath}
               </div>
               <ol className="space-y-1 text-xs">
                 {p.candidates.map((c, i) => (
                   <li key={i} className="flex items-center gap-2">
-                    <span className="text-neutral-500">#{i + 1}</span>
-                    <span className="font-mono text-neutral-200">{c.model}</span>
+                    <span className="text-faint">#{i + 1}</span>
+                    <span className="font-mono text-fg">{c.model}</span>
                   </li>
                 ))}
               </ol>
-              <div className="mt-2 text-xs text-neutral-500">
+              <div className="mt-2 text-xs text-faint">
                 Fallback on:{" "}
                 {[
                   p.fallback_on.http_5xx && "5xx",
