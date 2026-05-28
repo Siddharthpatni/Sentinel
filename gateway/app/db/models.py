@@ -114,6 +114,46 @@ class Trace(Base):
         return f"<Trace {self.id} {self.provider}/{self.model}>"
 
 
+class Span(Base):
+    """One node in a trace tree.
+
+    Spans nest via ``parent_span_id`` (self-referential, null = root). A
+    trace can carry many spans — typically one root agent span with LLM
+    and tool spans beneath. Stored flat; the dashboard rebuilds the tree
+    client-side from ``parent_span_id``.
+    """
+
+    __tablename__ = "spans"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    trace_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("traces.id", ondelete="CASCADE"), nullable=False
+    )
+    parent_span_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("spans.id", ondelete="CASCADE"), nullable=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # "agent" | "llm" | "tool" | "chain" | "retriever" | "custom"
+    span_type: Mapped[str] = mapped_column(String(32), nullable=False, default="custom")
+    start_ts: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    end_ts: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # "ok" | "error"
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="ok")
+    attributes: Mapped[dict] = mapped_column(JSONType, nullable=False, default=dict)
+
+    __table_args__ = (
+        Index("ix_spans_trace_id", "trace_id"),
+        Index("ix_spans_parent", "parent_span_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Span {self.id} {self.span_type}:{self.name}>"
+
+
 class VerificationRule(Base):
     """Declarative rule deciding when a primary trace should be re-checked by a judge."""
 
