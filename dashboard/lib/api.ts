@@ -4,6 +4,18 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+export interface Span {
+  id: string;
+  trace_id: string;
+  parent_span_id: string | null;
+  name: string;
+  span_type: string;
+  start_ts: string;
+  end_ts: string | null;
+  status: string;
+  attributes: Record<string, unknown>;
+}
+
 export interface Trace {
   id: string;
   project_id: string;
@@ -18,6 +30,7 @@ export interface Trace {
   response_body: Record<string, unknown> | null;
   error_message: string | null;
   created_at: string;
+  spans?: Span[];
 }
 
 export interface TraceListResponse {

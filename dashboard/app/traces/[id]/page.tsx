@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchTrace, type Trace } from "@/lib/api";
 import { AnnotationPanel } from "@/components/annotation-panel";
+import { SpanWaterfall } from "@/components/span-waterfall";
 
 /* ================================================================
    Helpers
@@ -298,6 +299,11 @@ export default function TraceDetailPage() {
             </p>
           </div>
         )}
+
+        {/* Span tree waterfall */}
+        <div className="mb-6 animate-slide-up">
+          <SpanWaterfall spans={trace.spans ?? []} />
+        </div>
 
         {/* Request / Response Split */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
