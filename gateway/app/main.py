@@ -20,6 +20,7 @@ from app.routes import (
     anthropic_compat,
     audit,
     credentials,
+    datasets,
     evals,
     openai_compat,
     policies,
@@ -109,6 +110,7 @@ app.include_router(alerts.router)
 app.include_router(annotations.annotations_router)
 app.include_router(annotations.sessions_router)
 app.include_router(credentials.router)
+app.include_router(datasets.router)
 
 
 @app.get("/health")
