@@ -622,32 +622,17 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : filteredTraces.length === 0 ? (
-            <div className="empty-state">
-              <IconEmpty />
-              <p className="empty-state-title">
-                {traces.length === 0 ? "No traces yet" : "No matching traces"}
-              </p>
-              <p className="empty-state-desc">
-                {traces.length === 0 ? (
-                  <>
-                    Point your OpenAI or Anthropic SDK at{" "}
-                    <code
-                      className="px-2 py-1 rounded text-xs"
-                      style={{
-                        background: "var(--sentinel-surface-hover)",
-                        color: "var(--sentinel-accent-light)",
-                      }}
-                    >
-                      http://localhost:8000
-                    </code>{" "}
-                    and make your first API call. Traces will appear here
-                    automatically.
-                  </>
-                ) : (
-                  "Try clearing a filter above."
-                )}
-              </p>
-            </div>
+            traces.length === 0 ? (
+              <ZeroStateHero />
+            ) : (
+              <div className="empty-state">
+                <IconEmpty />
+                <p className="empty-state-title">No matching traces</p>
+                <p className="empty-state-desc">
+                  Try clearing a filter above.
+                </p>
+              </div>
+            )
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -774,6 +759,133 @@ export default function DashboardPage() {
       >
         Sentinel v0.1.0 — Open Source LLM Observability
       </footer>
+    </div>
+  );
+}
+
+/* ================================================================
+   Zero-State Hero (shown when there are no traces at all)
+   ================================================================ */
+
+function ZeroStateHero() {
+  const sdkSnippet = `from sentinel import OpenAI
+
+client = OpenAI(
+    sentinel_api_key="sk-sentinel-dev-000",
+    sentinel_url="http://localhost:8000",
+    provider_api_key="sk-...",  # your real OpenAI key
+)
+
+client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello, Sentinel!"}],
+)`;
+
+  const curlSnippet = `curl http://localhost:8000/v1/chat/completions \\
+  -H "Authorization: Bearer sk-sentinel-dev-000" \\
+  -H "x-provider-key: sk-..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hi"}]
+  }'`;
+
+  return (
+    <div className="px-8 py-12">
+      <div className="max-w-3xl mx-auto text-center mb-8">
+        <h2
+          className="text-2xl font-bold mb-2"
+          style={{ color: "var(--sentinel-text-primary)" }}
+        >
+          Welcome to Sentinel
+        </h2>
+        <p
+          className="text-sm"
+          style={{ color: "var(--sentinel-text-muted)" }}
+        >
+          No traces yet. Point any OpenAI/Anthropic client at{" "}
+          <code
+            className="px-2 py-0.5 rounded text-xs"
+            style={{
+              background: "var(--sentinel-surface-hover)",
+              color: "var(--sentinel-accent-light)",
+            }}
+          >
+            localhost:8000
+          </code>{" "}
+          and your first call will appear here in real time.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-5xl mx-auto">
+        <div className="glass-panel-elevated p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--sentinel-text-muted)" }}
+            >
+              Python SDK
+            </h3>
+            <span
+              className="text-xs"
+              style={{ color: "var(--sentinel-text-faint)" }}
+            >
+              pip install sentinel-sdk
+            </span>
+          </div>
+          <pre
+            className="json-viewer text-xs"
+            style={{ maxHeight: "none" }}
+          >
+            {sdkSnippet}
+          </pre>
+        </div>
+
+        <div className="glass-panel-elevated p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: "var(--sentinel-text-muted)" }}
+            >
+              curl (no install)
+            </h3>
+            <span
+              className="text-xs"
+              style={{ color: "var(--sentinel-text-faint)" }}
+            >
+              works with any HTTP client
+            </span>
+          </div>
+          <pre
+            className="json-viewer text-xs"
+            style={{ maxHeight: "none" }}
+          >
+            {curlSnippet}
+          </pre>
+        </div>
+      </div>
+
+      <div
+        className="max-w-3xl mx-auto mt-8 text-center text-xs"
+        style={{ color: "var(--sentinel-text-muted)" }}
+      >
+        Want canned data? Run{" "}
+        <code
+          className="px-2 py-0.5 rounded"
+          style={{
+            background: "var(--sentinel-surface-hover)",
+            color: "var(--sentinel-accent-light)",
+          }}
+        >
+          make demo
+        </code>{" "}
+        (requires{" "}
+        <code style={{ color: "var(--sentinel-text-secondary)" }}>
+          OPENAI_API_KEY
+        </code>
+        ) to seed ~12 varied traces, a span tree, a routing policy, and a
+        dataset.
+      </div>
     </div>
   );
 }
