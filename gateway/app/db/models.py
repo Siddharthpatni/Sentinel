@@ -154,6 +154,63 @@ class Span(Base):
         return f"<Span {self.id} {self.span_type}:{self.name}>"
 
 
+class Dataset(Base):
+    """Named collection of input examples for replay, eval, or playground use.
+
+    Holds many ``DatasetItem`` rows. Items typically capture the full
+    request body (messages, model, etc.) and optionally an expected
+    output so they can be re-run through the gateway and compared.
+    """
+
+    __tablename__ = "datasets"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "name", name="uq_datasets_project_name"),
+        Index("ix_datasets_project_id", "project_id"),
+    )
+
+
+class DatasetItem(Base):
+    """One input example inside a Dataset.
+
+    ``input`` is the wire-shape request the playground/eval will send
+    (e.g. ``{"messages": [...], "model": "gpt-4o-mini"}``).
+    ``expected_output`` is optional ground truth for assertion-style
+    evals. ``source_trace_id`` records the trace this row was captured
+    from, so the dashboard can link back.
+    """
+
+    __tablename__ = "dataset_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    dataset_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False
+    )
+    input: Mapped[dict] = mapped_column(JSONType, nullable=False)
+    expected_output: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    item_metadata: Mapped[dict] = mapped_column(JSONType, nullable=False, default=dict)
+    source_trace_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("traces.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_dataset_items_dataset_id", "dataset_id"),
+    )
+
+
 class VerificationRule(Base):
     """Declarative rule deciding when a primary trace should be re-checked by a judge."""
 
