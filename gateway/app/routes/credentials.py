@@ -14,9 +14,11 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
+import httpx
+
 from app.db.models import Project, ProviderCredential
 from app.db.session import AsyncSessionLocal
-from app.security.keyvault import encrypt, fingerprint
+from app.security.keyvault import decrypt, encrypt, fingerprint
 
 router = APIRouter(prefix="/api/credentials", tags=["credentials"])
 
@@ -140,3 +142,78 @@ async def delete_credential(credential_id: uuid.UUID) -> None:
             raise HTTPException(status_code=404, detail="Credential not found")
         await session.delete(cred)
         await session.commit()
+
+
+class CredentialTestResponse(BaseModel):
+    ok: bool
+    status_code: int
+    message: str
+
+
+# Cheapest endpoint per provider that requires auth but no billable tokens.
+# We use the model-list endpoints — they return 200 on a valid key and
+# 401/403 on a bad one, without consuming any credits.
+_TEST_ENDPOINTS: dict[str, tuple[str, str, dict[str, str]]] = {
+    "openai":     ("GET", "https://api.openai.com/v1/models",        {}),
+    "anthropic":  ("GET", "https://api.anthropic.com/v1/models",     {"anthropic-version": "2023-06-01"}),
+    "openrouter": ("GET", "https://openrouter.ai/api/v1/models",     {}),
+    "gemini":     ("GET", "https://generativelanguage.googleapis.com/v1beta/models", {}),
+}
+
+
+def _auth_headers(provider: str, api_key: str) -> dict[str, str]:
+    if provider == "anthropic":
+        return {"x-api-key": api_key}
+    if provider == "gemini":
+        # Gemini uses ?key= query param, handled in the URL build below
+        return {}
+    return {"Authorization": f"Bearer {api_key}"}
+
+
+@router.post("/{credential_id}/test", response_model=CredentialTestResponse)
+async def test_credential(credential_id: uuid.UUID) -> CredentialTestResponse:
+    """Verify a stored credential by calling the provider's model-list endpoint.
+
+    Returns ``ok=True`` for a 2xx response, ``ok=False`` otherwise. Does
+    not consume any tokens (model-list endpoints are unbilled).
+    """
+    async with AsyncSessionLocal() as session:
+        cred = await session.get(ProviderCredential, credential_id)
+        if cred is None:
+            raise HTTPException(status_code=404, detail="Credential not found")
+        plaintext = decrypt(cred.encrypted_key)
+        provider = cred.provider
+
+    spec = _TEST_ENDPOINTS.get(provider)
+    if spec is None:
+        raise HTTPException(status_code=422, detail=f"Cannot test provider {provider!r}")
+    method, url, extra_headers = spec
+    headers = {**_auth_headers(provider, plaintext), **extra_headers}
+    if provider == "gemini":
+        url = f"{url}?key={plaintext}"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.request(method, url, headers=headers)
+    except httpx.HTTPError as exc:
+        return CredentialTestResponse(
+            ok=False, status_code=0, message=f"Network error: {exc}"
+        )
+
+    ok = 200 <= resp.status_code < 300
+    if ok:
+        return CredentialTestResponse(
+            ok=True, status_code=resp.status_code, message="Credential is valid"
+        )
+
+    # Try to extract a helpful message from the error body
+    try:
+        body = resp.json()
+        msg = body.get("error", {}).get("message") if isinstance(body, dict) else None
+    except Exception:
+        msg = None
+    return CredentialTestResponse(
+        ok=False,
+        status_code=resp.status_code,
+        message=msg or f"Provider returned HTTP {resp.status_code}",
+    )

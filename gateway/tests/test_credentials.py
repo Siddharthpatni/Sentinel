@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 
 import pytest
+import respx
+import httpx
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
@@ -159,3 +161,74 @@ async def test_delete_removes_credential(client, project, session_factory):
 
     async with session_factory() as session:
         assert await session.get(ProviderCredential, uuid.UUID(cid)) is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_credential_test_endpoint_returns_ok_on_2xx(client, session_factory, project):
+    create = await client.post("/api/credentials", json={
+        "project_id": str(project.id),
+        "provider": "openai",
+        "label": "p",
+        "api_key": "sk-live-key-1234567890",
+    })
+    cid = create.json()["id"]
+
+    respx.get("https://api.openai.com/v1/models").mock(
+        return_value=httpx.Response(200, json={"data": []})
+    )
+    resp = await client.post(f"/api/credentials/{cid}/test")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert body["status_code"] == 200
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_credential_test_endpoint_reports_401(client, session_factory, project):
+    create = await client.post("/api/credentials", json={
+        "project_id": str(project.id),
+        "provider": "anthropic",
+        "label": "p",
+        "api_key": "sk-ant-bad-key-1234567890",
+    })
+    cid = create.json()["id"]
+
+    respx.get("https://api.anthropic.com/v1/models").mock(
+        return_value=httpx.Response(
+            401, json={"error": {"message": "invalid x-api-key"}}
+        )
+    )
+    resp = await client.post(f"/api/credentials/{cid}/test")
+    body = resp.json()
+    assert body["ok"] is False
+    assert body["status_code"] == 401
+    assert "invalid" in body["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_credential_test_returns_404_for_unknown(client, session_factory):
+    resp = await client.post(f"/api/credentials/{uuid.uuid4()}/test")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_credential_test_handles_network_error(client, session_factory, project):
+    create = await client.post("/api/credentials", json={
+        "project_id": str(project.id),
+        "provider": "openrouter",
+        "label": "p",
+        "api_key": "sk-or-1234567890",
+    })
+    cid = create.json()["id"]
+
+    respx.get("https://openrouter.ai/api/v1/models").mock(
+        side_effect=httpx.ConnectError("DNS failure")
+    )
+    resp = await client.post(f"/api/credentials/{cid}/test")
+    body = resp.json()
+    assert body["ok"] is False
+    assert body["status_code"] == 0
+    assert "network" in body["message"].lower()
