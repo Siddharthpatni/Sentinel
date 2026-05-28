@@ -44,8 +44,51 @@ class TraceResponse(BaseModel):
     risk_tier: str | None = None
     session_id: uuid.UUID | None = None
     created_at: datetime
+    spans: list[SpanResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+
+class SpanIn(BaseModel):
+    """One span in an ingest payload."""
+
+    id: uuid.UUID
+    parent_span_id: uuid.UUID | None = None
+    name: str
+    span_type: str = "custom"
+    start_ts: datetime
+    end_ts: datetime | None = None
+    status: str = "ok"
+    attributes: dict = Field(default_factory=dict)
+
+
+class SpanBatchIngest(BaseModel):
+    """Body of POST /api/traces/{trace_id}/spans."""
+
+    name: str
+    provider: str = "agent"
+    model: str = "n/a"
+    start_ts: datetime
+    end_ts: datetime
+    spans: list[SpanIn]
+
+
+class SpanResponse(BaseModel):
+    """Schema for one span in a trace's span list."""
+
+    id: uuid.UUID
+    trace_id: uuid.UUID
+    parent_span_id: uuid.UUID | None = None
+    name: str
+    span_type: str
+    start_ts: datetime
+    end_ts: datetime | None = None
+    status: str
+    model_config = {"from_attributes": True}
+
+
+# Resolve forward reference TraceResponse -> SpanResponse
+TraceResponse.model_rebuild()
 
 
 class TraceListResponse(BaseModel):

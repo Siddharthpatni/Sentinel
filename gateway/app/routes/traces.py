@@ -5,13 +5,19 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 
-from app.db.models import Trace
+from app.db.models import Project, Span, Trace
 from app.db.session import AsyncSessionLocal
-from app.tracing.schema import TraceListResponse, TraceResponse, TraceStats
+from app.tracing.schema import (
+    SpanBatchIngest,
+    SpanResponse,
+    TraceListResponse,
+    TraceResponse,
+    TraceStats,
+)
 
 router = APIRouter(prefix="/api/traces", tags=["traces"])
 
@@ -170,9 +176,79 @@ async def get_timeseries(
 
 @router.get("/{trace_id}", response_model=TraceResponse)
 async def get_trace(trace_id: uuid.UUID) -> TraceResponse:
-    """Get a single trace by ID."""
+    """Get a single trace by ID, including its span tree (flat list)."""
     async with AsyncSessionLocal() as session:
         trace = await session.get(Trace, trace_id)
         if trace is None:
             raise HTTPException(status_code=404, detail="Trace not found")
-        return TraceResponse.model_validate(trace)
+        span_rows = (
+            await session.execute(
+                select(Span).where(Span.trace_id == trace_id).order_by(Span.start_ts)
+            )
+        ).scalars().all()
+        resp = TraceResponse.model_validate(trace)
+        resp.spans = [SpanResponse.model_validate(s) for s in span_rows]
+        return resp
+
+
+@router.post("/{trace_id}/spans", status_code=202)
+async def ingest_spans(
+    trace_id: uuid.UUID,
+    payload: SpanBatchIngest,
+    x_sentinel_key: str | None = Header(None),
+) -> dict:
+    """Ingest a batch of spans for a trace.
+
+    If the parent trace row does not yet exist, a shell Trace is created
+    with derived latency and provider/model from the payload. Existing
+    spans for ``trace_id`` are preserved; this endpoint only appends.
+    """
+    if not x_sentinel_key:
+        raise HTTPException(status_code=401, detail="Missing Sentinel API key")
+
+    async with AsyncSessionLocal() as session:
+        project = (
+            await session.execute(
+                select(Project).where(Project.api_key == x_sentinel_key)
+            )
+        ).scalar_one_or_none()
+        if project is None:
+            raise HTTPException(status_code=401, detail="Invalid API key")
+
+        trace = await session.get(Trace, trace_id)
+        if trace is None:
+            duration_ms = int(
+                (payload.end_ts - payload.start_ts).total_seconds() * 1000
+            )
+            trace = Trace(
+                id=trace_id,
+                project_id=project.id,
+                provider=payload.provider,
+                model=payload.model,
+                latency_ms=max(duration_ms, 0),
+                status_code=200,
+                created_at=payload.start_ts,
+                request_body={"trace_name": payload.name},
+                response_body=None,
+            )
+            session.add(trace)
+            await session.flush()
+        elif trace.project_id != project.id:
+            raise HTTPException(status_code=403, detail="Trace belongs to another project")
+
+        for s in payload.spans:
+            session.add(
+                Span(
+                    id=s.id,
+                    trace_id=trace_id,
+                    parent_span_id=s.parent_span_id,
+                    name=s.name,
+                    span_type=s.span_type,
+                    start_ts=s.start_ts,
+                    end_ts=s.end_ts,
+                    status=s.status,
+                    attributes=s.attributes,
+                )
+            )
+        await session.commit()
+        return {"trace_id": str(trace_id), "spans_ingested": len(payload.spans)}
