@@ -61,9 +61,30 @@ export default function PlaygroundPage() {
           cache: "no-store",
         }).then((r) => r.json());
         setProjects(pj.projects);
-        if (pj.projects.length > 0) {
-          setProjectId(pj.projects[0].id);
-          setDatasets(await fetchDatasets(pj.projects[0].id));
+        // Replay prefill from /traces/[id] → "Replay in playground"
+        let prefillProjectId: string | null = null;
+        try {
+          const raw = sessionStorage.getItem("sentinel-playground-prefill");
+          if (raw) {
+            const p = JSON.parse(raw) as {
+              model?: string;
+              messages?: Message[];
+              project_id?: string;
+            };
+            if (p.model) setModel(p.model);
+            if (Array.isArray(p.messages) && p.messages.length > 0)
+              setMessages(p.messages);
+            if (p.project_id) prefillProjectId = p.project_id;
+            sessionStorage.removeItem("sentinel-playground-prefill");
+          }
+        } catch {
+          /* ignore */
+        }
+        const initialPid =
+          prefillProjectId ?? (pj.projects.length > 0 ? pj.projects[0].id : "");
+        if (initialPid) {
+          setProjectId(initialPid);
+          setDatasets(await fetchDatasets(initialPid));
         }
       } catch (e) {
         setErr(String(e));

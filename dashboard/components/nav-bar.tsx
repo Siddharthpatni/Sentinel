@@ -13,6 +13,7 @@ const links = [
   { href: "/evals", label: "Evals" },
   { href: "/datasets", label: "Datasets" },
   { href: "/audit", label: "Audit" },
+  { href: "/annotations", label: "Queue" },
   { href: "/alerts", label: "Alerts" },
   { href: "/settings/keys", label: "Keys" },
 ];

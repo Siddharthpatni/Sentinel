@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { fetchTrace, type Trace } from "@/lib/api";
 import { AnnotationPanel } from "@/components/annotation-panel";
 import { SpanWaterfall } from "@/components/span-waterfall";
+import { TraceActions } from "@/components/trace-actions";
 
 /* ================================================================
    Helpers
@@ -303,6 +304,11 @@ export default function TraceDetailPage() {
         {/* Span tree waterfall */}
         <div className="mb-6 animate-slide-up">
           <SpanWaterfall spans={trace.spans ?? []} />
+        </div>
+
+        {/* Trace actions */}
+        <div className="mb-6 animate-slide-up">
+          <TraceActions trace={trace} />
         </div>
 
         {/* Request / Response Split */}

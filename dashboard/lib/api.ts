@@ -416,3 +416,19 @@ export async function deleteDatasetItem(
   if (!res.ok && res.status !== 204)
     throw new Error(`Failed to delete item: ${res.status}`);
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Annotations queue (Phase 3 — Session 3)
+   ──────────────────────────────────────────────────────────────── */
+
+export async function fetchUnannotatedTraces(
+  limit = 50,
+): Promise<TraceListResponse> {
+  const res = await fetch(
+    `${API_URL}/api/traces/queues/unannotated?limit=${limit}`,
+    { cache: "no-store" },
+  );
+  if (!res.ok)
+    throw new Error(`Failed to fetch unannotated queue: ${res.status}`);
+  return res.json();
+}

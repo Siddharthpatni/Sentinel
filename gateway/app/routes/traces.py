@@ -9,7 +9,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 
-from app.db.models import Project, Span, Trace
+from app.db.models import Project, Span, Trace, TraceAnnotation
 from app.db.session import AsyncSessionLocal
 from app.tracing.schema import (
     SpanBatchIngest,
@@ -171,6 +171,32 @@ async def get_timeseries(
                 )
                 for r in rows
             ],
+        )
+
+
+@router.get("/queues/unannotated", response_model=TraceListResponse)
+async def list_unannotated(
+    limit: int = Query(50, ge=1, le=200),
+) -> TraceListResponse:
+    """Traces with no annotations yet — feeds the human-review queue."""
+    async with AsyncSessionLocal() as session:
+        annotated = select(TraceAnnotation.trace_id).distinct()
+        stmt = (
+            select(Trace)
+            .where(Trace.id.notin_(annotated))
+            .order_by(desc(Trace.created_at))
+            .limit(limit)
+        )
+        rows = (await session.execute(stmt)).scalars().all()
+        total = (
+            await session.execute(
+                select(func.count(Trace.id)).where(Trace.id.notin_(annotated))
+            )
+        ).scalar_one()
+        return TraceListResponse(
+            traces=[TraceResponse.model_validate(t) for t in rows],
+            next_cursor=None,
+            total_count=int(total),
         )
 
 
