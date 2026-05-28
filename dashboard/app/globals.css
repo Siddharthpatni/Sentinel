@@ -460,3 +460,167 @@ input:focus, select:focus, textarea:focus {
 input::placeholder, textarea::placeholder {
   color: var(--sentinel-text-faint);
 }
+
+/* ============================================
+   Error banner (recoverable fetch errors)
+   ============================================ */
+
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--sentinel-error-dim);
+  border: 1px solid color-mix(in srgb, var(--sentinel-error) 30%, transparent);
+  border-radius: 8px;
+  color: var(--sentinel-error);
+  font-size: 0.85rem;
+}
+.error-banner-msg { flex: 1; }
+.error-banner button {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--sentinel-error) 35%, transparent);
+  color: var(--sentinel-error);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.error-banner button:hover {
+  background: color-mix(in srgb, var(--sentinel-error) 12%, transparent);
+}
+
+/* ============================================
+   Toasts
+   ============================================ */
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: none;
+}
+.toast {
+  min-width: 240px;
+  max-width: 360px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: var(--sentinel-surface-elevated);
+  border: 1px solid var(--sentinel-border);
+  box-shadow: var(--sentinel-shadow-lg);
+  color: var(--sentinel-text-primary);
+  animation: slideUp 0.25s ease-out;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--sentinel-text-muted);
+}
+.toast-success::before { background: var(--sentinel-success); box-shadow: 0 0 8px var(--sentinel-success); }
+.toast-error::before { background: var(--sentinel-error); box-shadow: 0 0 8px var(--sentinel-error); }
+.toast-info::before { background: var(--sentinel-accent); box-shadow: 0 0 8px var(--sentinel-accent); }
+
+/* ============================================
+   Keyboard hint
+   ============================================ */
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--sentinel-surface-hover);
+  border: 1px solid var(--sentinel-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--sentinel-text-secondary);
+  line-height: 1.2;
+}
+
+/* ============================================
+   Trace table — keyboard focus
+   ============================================ */
+
+.trace-table tr:focus-visible {
+  outline: none;
+}
+.trace-table tr:focus-visible td {
+  background-color: var(--sentinel-accent-dim);
+  color: var(--sentinel-text-primary);
+  box-shadow: inset 2px 0 0 var(--sentinel-accent);
+}
+
+/* ============================================
+   Filter bar (compact form row above tables)
+   ============================================ */
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--sentinel-border-subtle);
+  background: color-mix(in srgb, var(--sentinel-surface) 60%, transparent);
+  flex-wrap: wrap;
+}
+.filter-bar select, .filter-bar input {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  background: var(--sentinel-surface);
+}
+.filter-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--sentinel-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   Light-theme polish overrides
+   ============================================ */
+
+html.light .glass-panel,
+html.light .glass-panel-elevated {
+  background: var(--sentinel-surface);
+  box-shadow: var(--sentinel-shadow-sm);
+}
+html.light .json-viewer {
+  background: var(--sentinel-surface-hover);
+}
+html.light .json-string { color: #047857; }
+html.light .json-number { color: #b45309; }
+html.light .json-boolean { color: var(--sentinel-accent); }
+html.light .badge-openai {
+  background: rgba(16, 163, 127, 0.10);
+  color: #047857;
+}
+html.light .badge-anthropic {
+  background: rgba(180, 100, 50, 0.10);
+  color: #92400e;
+}
+html.light .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sentinel-surface-hover) 25%,
+    #e9e9f1 50%,
+    var(--sentinel-surface-hover) 75%
+  );
+  background-size: 200% 100%;
+}
+html.light .btn-primary { color: white; }
+html.light .toast { box-shadow: var(--sentinel-shadow-md); }

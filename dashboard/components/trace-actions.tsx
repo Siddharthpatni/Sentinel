@@ -8,6 +8,7 @@ import {
   addDatasetItem,
   fetchDatasets,
 } from "@/lib/api";
+import { useToast } from "@/components/toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -18,6 +19,7 @@ interface Project {
 
 export function TraceActions({ trace }: { trace: Trace }) {
   const router = useRouter();
+  const toast = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -69,9 +71,10 @@ export function TraceActions({ trace }: { trace: Trace }) {
         source_trace_id: trace.id,
       });
       setPickerOpen(false);
-      alert("Saved to dataset");
+      toast.push("Saved to dataset", "success");
     } catch (e) {
       setErr(String(e));
+      toast.push("Save failed", "error");
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,8 @@ import {
   fetchProjects,
   fetchSessions,
 } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { EmptyState, TableSkeleton } from "@/components/empty-state";
 
 function formatDate(s: string): string {
   return new Date(s).toLocaleString("en-US", {
@@ -24,18 +26,24 @@ export default function SessionsPage() {
   const [projectId, setProjectId] = useState<string>("");
   const [rows, setRows] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProjects().then((p) => {
-      setProjects(p);
-      if (p.length > 0) setProjectId(p[0].id);
-    });
+    fetchProjects()
+      .then((p) => {
+        setProjects(p);
+        if (p.length > 0) setProjectId(p[0].id);
+      })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
   }, []);
 
   const reload = useCallback(async () => {
     setLoading(true);
+    setErr(null);
     try {
       setRows(await fetchSessions(projectId || undefined));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -77,32 +85,40 @@ export default function SessionsPage() {
       </div>
 
       <div className="glass-panel overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b border-default">
-              <th className="px-4 py-3 text-muted font-medium">Name</th>
-              <th className="px-4 py-3 text-muted font-medium">External ID</th>
-              <th className="px-4 py-3 text-muted font-medium">Traces</th>
-              <th className="px-4 py-3 text-muted font-medium">Last seen</th>
-              <th className="px-4 py-3 text-muted font-medium">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-faint">
-                  Loading…
-                </td>
+        {err && (
+          <div className="p-4">
+            <ErrorBanner message={err} onRetry={reload} />
+          </div>
+        )}
+        {loading ? (
+          <TableSkeleton rows={6} />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="No sessions yet"
+            description={
+              <>
+                Tag a request with{" "}
+                <code>
+                  extra_body=&#123;&quot;_sentinel&quot;:
+                  &#123;&quot;session_id&quot;: &quot;…&quot;&#125;&#125;
+                </code>{" "}
+                to group traces into conversation threads.
+              </>
+            }
+          />
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left border-b border-default">
+                <th className="px-4 py-3 text-muted font-medium">Name</th>
+                <th className="px-4 py-3 text-muted font-medium">External ID</th>
+                <th className="px-4 py-3 text-muted font-medium">Traces</th>
+                <th className="px-4 py-3 text-muted font-medium">Last seen</th>
+                <th className="px-4 py-3 text-muted font-medium">Created</th>
               </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-faint">
-                  No sessions yet. Tag a request with{" "}
-                  <code>extra_body=&#123;&quot;_sentinel&quot;: &#123;&quot;session_id&quot;: &quot;…&quot;&#125;&#125;</code>.
-                </td>
-              </tr>
-            ) : (
-              rows.map((s) => (
+            </thead>
+            <tbody>
+              {rows.map((s) => (
                 <tr
                   key={s.id}
                   className="border-b border-subtle hover:bg-surface/40"
@@ -126,10 +142,10 @@ export default function SessionsPage() {
                     {formatDate(s.created_at)}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </main>
   );

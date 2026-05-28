@@ -8,6 +8,9 @@ import {
   deleteDataset,
   fetchDatasets,
 } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { EmptyState, TableSkeleton } from "@/components/empty-state";
+import { useToast } from "@/components/toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -17,9 +20,11 @@ interface Project {
 }
 
 export default function DatasetsPage() {
+  const toast = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -27,10 +32,14 @@ export default function DatasetsPage() {
 
   async function load(pid: string) {
     if (!pid) return;
+    setLoading(true);
+    setErr(null);
     try {
       setDatasets(await fetchDatasets(pid));
     } catch (e) {
-      setErr(String(e));
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -63,9 +72,10 @@ export default function DatasetsPage() {
       });
       setName("");
       setDescription("");
+      toast.push(`Created dataset "${name}"`, "success");
       await load(projectId);
     } catch (e) {
-      setErr(String(e));
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -73,8 +83,13 @@ export default function DatasetsPage() {
 
   async function remove(id: string) {
     if (!confirm("Delete this dataset and all its items?")) return;
-    await deleteDataset(id);
-    await load(projectId);
+    try {
+      await deleteDataset(id);
+      toast.push("Dataset deleted", "success");
+      await load(projectId);
+    } catch (e) {
+      toast.push(`Delete failed: ${e}`, "error");
+    }
   }
 
   return (
@@ -130,15 +145,23 @@ export default function DatasetsPage() {
         {err && <p className="text-bad text-xs mt-2">{err}</p>}
       </div>
 
+      {err && !busy && (
+        <ErrorBanner message={err} onRetry={() => load(projectId)} />
+      )}
+
       <div className="glass-panel overflow-hidden">
-        {datasets.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-title">No datasets yet</div>
-            <p className="empty-state-desc">
-              Create one above, or click &ldquo;Add to dataset&rdquo; on any
-              trace.
-            </p>
-          </div>
+        {loading ? (
+          <TableSkeleton rows={4} />
+        ) : datasets.length === 0 ? (
+          <EmptyState
+            title="No datasets yet"
+            description={
+              <>
+                Create one above, or click &ldquo;Add to dataset&rdquo; on any
+                trace.
+              </>
+            }
+          />
         ) : (
           <table className="trace-table">
             <thead>

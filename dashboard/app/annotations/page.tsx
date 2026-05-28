@@ -3,19 +3,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { type Trace, fetchUnannotatedTraces } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { EmptyState, TableSkeleton } from "@/components/empty-state";
 
 export default function AnnotationsQueuePage() {
   const [traces, setTraces] = useState<Trace[]>([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   async function load() {
+    setLoading(true);
+    setErr(null);
     try {
       const r = await fetchUnannotatedTraces(50);
       setTraces(r.traces);
       setTotal(r.total_count);
     } catch (e) {
-      setErr(String(e));
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -38,16 +45,16 @@ export default function AnnotationsQueuePage() {
         </p>
       </header>
 
-      {err && <p className="text-bad text-sm mb-4">{err}</p>}
+      {err && <ErrorBanner message={err} onRetry={load} />}
 
       <div className="glass-panel overflow-hidden">
-        {traces.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-title">Inbox zero</div>
-            <p className="empty-state-desc">
-              Every trace has at least one annotation. Nice.
-            </p>
-          </div>
+        {loading ? (
+          <TableSkeleton rows={6} />
+        ) : traces.length === 0 ? (
+          <EmptyState
+            title="Inbox zero"
+            description="Every trace has at least one annotation. Nice."
+          />
         ) : (
           <table className="trace-table">
             <thead>

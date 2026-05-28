@@ -7,6 +7,8 @@ import {
   createDataset,
   fetchDatasets,
 } from "@/lib/api";
+import { useToast } from "@/components/toast";
+import { ErrorBanner } from "@/components/error-banner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -29,6 +31,7 @@ const COMMON_MODELS = [
 ];
 
 export default function PlaygroundPage() {
+  const toast = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -179,9 +182,10 @@ export default function PlaygroundPage() {
         },
         expected_output: response ? { content: response } : null,
       });
-      alert("Saved to dataset");
+      toast.push("Saved to dataset", "success");
     } catch (e) {
       setErr(String(e));
+      toast.push("Save failed", "error");
     }
   }
 
@@ -284,9 +288,7 @@ export default function PlaygroundPage() {
       </div>
 
       {err && (
-        <div className="glass-panel p-4 mb-6 border border-bad">
-          <p className="text-bad text-sm font-mono break-all">{err}</p>
-        </div>
+        <ErrorBanner message={err} onRetry={() => setErr(null)} />
       )}
 
       {response !== null && (

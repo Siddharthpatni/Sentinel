@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchTraces,
@@ -11,6 +11,7 @@ import {
   type TraceStats,
 } from "@/lib/api";
 import { Sparkline } from "@/components/sparkline";
+import { ErrorBanner } from "@/components/error-banner";
 
 /* ================================================================
    Helper Functions
@@ -222,11 +223,22 @@ export default function DashboardPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [providerFilter, setProviderFilter] = useState("");
+  const [modelFilter, setModelFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "ok" | "err">("");
+  const [err, setErr] = useState<string | null>(null);
+  const [focusedRow, setFocusedRow] = useState(0);
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   const loadData = useCallback(async () => {
     try {
+      setErr(null);
       const [tracesRes, statsRes, seriesRes] = await Promise.all([
-        fetchTraces({ limit: 50 }),
+        fetchTraces({
+          limit: 50,
+          provider: providerFilter || undefined,
+          model: modelFilter || undefined,
+        }),
         fetchTraceStats(),
         fetchTraceTimeseries(24, "hour"),
       ]);
@@ -234,12 +246,12 @@ export default function DashboardPage() {
       setNextCursor(tracesRes.next_cursor);
       setStats(statsRes);
       setSeries(seriesRes.points);
-    } catch (err) {
-      console.error("Failed to load data:", err);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [providerFilter, modelFilter]);
 
   useEffect(() => {
     loadData();
@@ -256,7 +268,12 @@ export default function DashboardPage() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await fetchTraces({ cursor: nextCursor, limit: 50 });
+      const res = await fetchTraces({
+        cursor: nextCursor,
+        limit: 50,
+        provider: providerFilter || undefined,
+        model: modelFilter || undefined,
+      });
       setTraces((prev) => [...prev, ...res.traces]);
       setNextCursor(res.next_cursor);
     } catch (err) {
@@ -265,6 +282,60 @@ export default function DashboardPage() {
       setLoadingMore(false);
     }
   };
+
+  // Status filter is client-side (server has no status param)
+  const filteredTraces = useMemo(() => {
+    if (!statusFilter) return traces;
+    return traces.filter((t) =>
+      statusFilter === "err" ? t.status_code >= 400 : t.status_code < 400,
+    );
+  }, [traces, statusFilter]);
+
+  // Visible window rollup (sum across filteredTraces)
+  const windowRollup = useMemo(() => {
+    return filteredTraces.reduce(
+      (acc, t) => ({
+        cost: acc.cost + t.cost_usd,
+        tokens: acc.tokens + t.prompt_tokens + t.completion_tokens,
+        latencyTotal: acc.latencyTotal + t.latency_ms,
+      }),
+      { cost: 0, tokens: 0, latencyTotal: 0 },
+    );
+  }, [filteredTraces]);
+
+  // Distinct models for filter dropdown (from current page)
+  const modelOptions = useMemo(() => {
+    const s = new Set<string>();
+    traces.forEach((t) => s.add(t.model));
+    if (stats) Object.keys(stats.traces_by_model).forEach((m) => s.add(m));
+    return Array.from(s).sort();
+  }, [traces, stats]);
+
+  // Keyboard nav: j/k row movement, enter to open
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (filteredTraces.length === 0) return;
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedRow((i) => Math.min(filteredTraces.length - 1, i + 1));
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedRow((i) => Math.max(0, i - 1));
+      } else if (e.key === "Enter") {
+        const t = filteredTraces[focusedRow];
+        if (t) router.push(`/traces/${t.id}`);
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [filteredTraces, focusedRow, router]);
+
+  useEffect(() => {
+    const row = rowRefs.current[focusedRow];
+    if (row) row.focus();
+  }, [focusedRow]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--sentinel-bg)" }}>
@@ -327,6 +398,8 @@ export default function DashboardPage() {
 
       {/* ── Main Content ── */}
       <main className="flex-1 px-6 py-6 max-w-[1400px] w-full mx-auto">
+        {err && <ErrorBanner message={err} onRetry={loadData} />}
+
         {/* Stats Grid */}
         <div
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 stagger-children"
@@ -464,29 +537,115 @@ export default function DashboardPage() {
             )}
           </div>
 
+          <div className="filter-bar">
+            <label>
+              Provider
+              <select
+                value={providerFilter}
+                onChange={(e) => {
+                  setLoading(true);
+                  setProviderFilter(e.target.value);
+                }}
+              >
+                <option value="">all</option>
+                {stats &&
+                  Object.keys(stats.traces_by_provider).map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Model
+              <select
+                value={modelFilter}
+                onChange={(e) => {
+                  setLoading(true);
+                  setModelFilter(e.target.value);
+                }}
+              >
+                <option value="">all</option>
+                {modelOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Status
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as "" | "ok" | "err")
+                }
+              >
+                <option value="">all</option>
+                <option value="ok">2xx/3xx</option>
+                <option value="err">4xx/5xx</option>
+              </select>
+            </label>
+            {(providerFilter || modelFilter || statusFilter) && (
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                onClick={() => {
+                  setProviderFilter("");
+                  setModelFilter("");
+                  setStatusFilter("");
+                  setLoading(true);
+                }}
+              >
+                Clear
+              </button>
+            )}
+            <span
+              className="ml-auto text-xs"
+              style={{ color: "var(--sentinel-text-muted)" }}
+            >
+              {filteredTraces.length} shown · spend{" "}
+              <strong style={{ color: "var(--sentinel-accent-light)" }}>
+                {formatCost(windowRollup.cost)}
+              </strong>{" "}
+              · {formatTokens(windowRollup.tokens)} tokens ·{" "}
+              <span className="kbd">j</span> <span className="kbd">k</span>{" "}
+              <span className="kbd">↵</span>
+            </span>
+          </div>
+
           {loading ? (
             <div className="p-6 space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="skeleton h-12 w-full" />
               ))}
             </div>
-          ) : traces.length === 0 ? (
+          ) : filteredTraces.length === 0 ? (
             <div className="empty-state">
               <IconEmpty />
-              <p className="empty-state-title">No traces yet</p>
+              <p className="empty-state-title">
+                {traces.length === 0 ? "No traces yet" : "No matching traces"}
+              </p>
               <p className="empty-state-desc">
-                Point your OpenAI or Anthropic SDK at{" "}
-                <code
-                  className="px-2 py-1 rounded text-xs"
-                  style={{
-                    background: "var(--sentinel-surface-hover)",
-                    color: "var(--sentinel-accent-light)",
-                  }}
-                >
-                  http://localhost:8000
-                </code>{" "}
-                and make your first API call. Traces will appear here
-                automatically.
+                {traces.length === 0 ? (
+                  <>
+                    Point your OpenAI or Anthropic SDK at{" "}
+                    <code
+                      className="px-2 py-1 rounded text-xs"
+                      style={{
+                        background: "var(--sentinel-surface-hover)",
+                        color: "var(--sentinel-accent-light)",
+                      }}
+                    >
+                      http://localhost:8000
+                    </code>{" "}
+                    and make your first API call. Traces will appear here
+                    automatically.
+                  </>
+                ) : (
+                  "Try clearing a filter above."
+                )}
               </p>
             </div>
           ) : (
@@ -505,9 +664,13 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {traces.map((trace) => (
+                    {filteredTraces.map((trace, i) => (
                       <tr
                         key={trace.id}
+                        tabIndex={i === focusedRow ? 0 : -1}
+                        ref={(el) => {
+                          rowRefs.current[i] = el;
+                        }}
                         onClick={() => router.push(`/traces/${trace.id}`)}
                       >
                         <td
