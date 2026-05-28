@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 class ProjectResponse(BaseModel):
     id: uuid.UUID
     name: str
+    api_key: str
 
     model_config = {"from_attributes": True}
 
