@@ -28,6 +28,16 @@ Sentinel sits as a drop-in proxy between your application and any LLM provider (
 - **Alerts** — threshold checks on cost-per-hour, error-rate, and p95
   latency over rolling windows. On-demand evaluation — wire to cron,
   Slack, or Datadog however you like. See [docs/alerts.md](docs/alerts.md).
+- **BYOK — per-project provider keys** — bring your own OpenAI /
+  Anthropic / OpenRouter / Gemini key, encrypted at rest with Fernet
+  and never echoed back to the dashboard after creation. Per-project
+  scoping means one Sentinel instance can serve multiple teams without
+  sharing credentials. Manage at
+  [/settings/keys](http://localhost:3000/settings/keys) or via
+  `POST /api/credentials`. Live-validate stored keys against the
+  provider's model-list endpoint (no token cost) with
+  `POST /api/credentials/{id}/test`. Background: see
+  [docs/learn/symmetric-encryption-fernet.md](docs/learn/symmetric-encryption-fernet.md).
 
 Learning notes for the concepts behind the implementation live in
 [docs/learn/](docs/learn/README.md).

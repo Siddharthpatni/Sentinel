@@ -18,3 +18,4 @@ use it this way?".
 - [pytest fixtures for async code](./pytest-fixtures-async.md)
 - [GitHub Actions job summaries](./github-actions-job-summaries.md)
 - [Conventional Commits and SemVer](./conventional-commits-and-semver.md)
+- [Symmetric encryption with Fernet](./symmetric-encryption-fernet.md)
