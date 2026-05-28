@@ -11,6 +11,7 @@ const links = [
   { href: "/evals", label: "Evals" },
   { href: "/audit", label: "Audit" },
   { href: "/alerts", label: "Alerts" },
+  { href: "/settings/keys", label: "Keys" },
 ];
 
 export function NavBar() {
