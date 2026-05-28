@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 from app.config import settings
-from app.providers.base import BaseAdapter, ProviderResponse
+from app.providers.base import BaseAdapter, ProviderResponse, strip_sentinel_meta
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -43,7 +43,7 @@ class OpenRouterAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> ProviderResponse:
         upstream_headers = self._headers(headers.get("x-provider-key"))
-        body = {**request_body, "stream": False}
+        body = {**strip_sentinel_meta(request_body), "stream": False}
 
         try:
             resp = await self._client.post(
@@ -82,7 +82,7 @@ class OpenRouterAdapter(BaseAdapter):
         headers: dict[str, str],
     ) -> AsyncIterator[bytes]:
         upstream_headers = self._headers(headers.get("x-provider-key"))
-        body = {**request_body, "stream": True, "stream_options": {"include_usage": True}}
+        body = {**strip_sentinel_meta(request_body), "stream": True, "stream_options": {"include_usage": True}}
 
         async with self._client.stream(
             "POST",

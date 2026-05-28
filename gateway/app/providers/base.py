@@ -22,6 +22,20 @@ class ProviderResponse:
     error_message: str | None = None
 
 
+def strip_sentinel_meta(body: dict) -> dict:
+    """Return a shallow copy of ``body`` with Sentinel-internal keys removed.
+
+    Provider APIs (OpenAI, Anthropic, OpenRouter) reject unknown top-level
+    fields with a 400. Sentinel's metadata (``_sentinel.session_id``,
+    ``_sentinel.is_judge``, ``_sentinel.route``) is for internal use only
+    and must be stripped before the request is forwarded upstream. The
+    original dict is preserved on the recorded trace for provenance.
+    """
+    if "_sentinel" not in body:
+        return body
+    return {k: v for k, v in body.items() if k != "_sentinel"}
+
+
 class BaseAdapter(abc.ABC):
     """Interface that all provider adapters must implement."""
 

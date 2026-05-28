@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from app.providers.base import BaseAdapter, ProviderResponse
+from app.providers.base import BaseAdapter, ProviderResponse, strip_sentinel_meta
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -44,7 +44,7 @@ class AnthropicAdapter(BaseAdapter):
             "Content-Type": "application/json",
         }
 
-        body = {**request_body, "stream": False}
+        body = {**strip_sentinel_meta(request_body), "stream": False}
 
         try:
             resp = await self._client.post(
@@ -89,7 +89,7 @@ class AnthropicAdapter(BaseAdapter):
             "Content-Type": "application/json",
         }
 
-        body = {**request_body, "stream": True}
+        body = {**strip_sentinel_meta(request_body), "stream": True}
 
         async with self._client.stream(
             "POST",

@@ -36,10 +36,11 @@ if ! curl -fs http://localhost:8000/health >/dev/null 2>&1; then
 fi
 
 echo "▶ installing SDK (editable)..."
-pip install -e ./sdk --quiet
+PYTHON_BIN="${PYTHON:-python3}"
+"$PYTHON_BIN" -m pip install -e ./sdk --quiet
 
 echo "▶ seeding demo data..."
-python examples/seed_demo.py
+"$PYTHON_BIN" examples/seed_demo.py
 
 URL="http://localhost:3000"
 echo ""
