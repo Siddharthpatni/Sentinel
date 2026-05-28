@@ -18,7 +18,9 @@ from app.routes import (
     alerts,
     annotations,
     anthropic_compat,
+    api_keys,
     audit,
+    auth,
     credentials,
     datasets,
     evals,
@@ -111,6 +113,8 @@ app.include_router(annotations.annotations_router)
 app.include_router(annotations.sessions_router)
 app.include_router(credentials.router)
 app.include_router(datasets.router)
+app.include_router(auth.router)
+app.include_router(api_keys.router)
 
 
 @app.get("/health")

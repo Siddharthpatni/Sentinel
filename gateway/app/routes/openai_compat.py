@@ -49,14 +49,18 @@ def _select_adapter(model: str) -> tuple[OpenAIAdapter | OpenRouterAdapter, str,
 
 
 async def _resolve_project(api_key: str) -> Project:
-    """Look up the project by API key, raising 401 if not found."""
+    """Look up the project by API key, raising 401 if not found.
+
+    Checks the scoped ``api_keys`` table first (SHA-256 hash), then falls
+    back to the legacy ``Project.api_key`` column for backward compat.
+    """
+    from app.auth import resolve_project_by_key
+
     async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(Project).where(Project.api_key == api_key)
-        )
-        project = result.scalar_one_or_none()
+        project = await resolve_project_by_key(session, api_key)
         if project is None:
             raise HTTPException(status_code=401, detail="Invalid API key")
+        await session.commit()
         return project
 
 

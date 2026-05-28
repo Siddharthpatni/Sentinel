@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # The default below is a dev-only key — REPLACE in production.
     sentinel_encryption_key: str = "WAjHM_cvg60vuFrpOGE7qX-m2tCB5raU3w0j6QxrfJA="
 
+    # JWT signing secret for dashboard session cookies. Replace in production.
+    sentinel_jwt_secret: str = "dev-jwt-secret-change-me-in-prod"
+    sentinel_jwt_ttl_seconds: int = 60 * 60 * 24 * 7  # 7 days
+    sentinel_cookie_name: str = "sentinel_session"
+
     # --- Server ---
     gateway_host: str = "0.0.0.0"
     gateway_port: int = 8000

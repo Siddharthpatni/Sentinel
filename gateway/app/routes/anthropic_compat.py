@@ -26,14 +26,14 @@ adapter = AnthropicAdapter()
 
 
 async def _resolve_project(api_key: str) -> Project:
-    """Look up the project by Sentinel API key."""
+    """Look up the project by Sentinel API key (scoped or legacy)."""
+    from app.auth import resolve_project_by_key
+
     async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(Project).where(Project.api_key == api_key)
-        )
-        project = result.scalar_one_or_none()
+        project = await resolve_project_by_key(session, api_key)
         if project is None:
             raise HTTPException(status_code=401, detail="Invalid API key")
+        await session.commit()
         return project
 
 

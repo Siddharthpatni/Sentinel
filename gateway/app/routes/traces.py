@@ -233,11 +233,9 @@ async def ingest_spans(
         raise HTTPException(status_code=401, detail="Missing Sentinel API key")
 
     async with AsyncSessionLocal() as session:
-        project = (
-            await session.execute(
-                select(Project).where(Project.api_key == x_sentinel_key)
-            )
-        ).scalar_one_or_none()
+        from app.auth import resolve_project_by_key
+
+        project = await resolve_project_by_key(session, x_sentinel_key)
         if project is None:
             raise HTTPException(status_code=401, detail="Invalid API key")
 
