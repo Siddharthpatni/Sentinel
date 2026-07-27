@@ -432,3 +432,110 @@ export async function fetchUnannotatedTraces(
     throw new Error(`Failed to fetch unannotated queue: ${res.status}`);
   return res.json();
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Autonomous Incident Triage (HITL workflow engine)
+   ──────────────────────────────────────────────────────────────── */
+
+export interface TriageDiagnosis {
+  root_cause: string;
+  confidence: number | null;
+  suspected_files: string[];
+  retrieved_chunks?: {
+    file_path: string;
+    start_line: number;
+    end_line: number;
+    content: string;
+  }[];
+  // Set by the SQLite cache registry (gateway/app/agents/cache_registry.py)
+  // when this diagnosis+patch was replayed from a prior resolution instead
+  // of freshly generated — see app/agents/triage.py:start_triage.
+  cache_hit?: boolean;
+}
+
+export interface TriagePatchFile {
+  path: string;
+  diff: string;
+}
+
+export interface TriageProposedPatch {
+  summary: string;
+  patch_kind: "git_diff" | "sql_fix" | "config_update" | "none";
+  files: TriagePatchFile[];
+}
+
+export type TriageStatus =
+  | "running"
+  | "paused_for_approval"
+  | "approved"
+  | "rejected"
+  | "completed"
+  | "failed";
+
+export type TriageNode = "diagnostic" | "planner" | "compliance" | "execution" | "done";
+
+export interface TriageExecution {
+  id: string;
+  project_id: string;
+  trace_id: string;
+  status: TriageStatus;
+  current_node: TriageNode;
+  diagnosis: TriageDiagnosis | null;
+  proposed_patch: TriageProposedPatch | null;
+  patch_risk_tier: "low" | "medium" | "high" | null;
+  compliance_reasons: string[];
+  pr_url: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  trace_risk_tier: string | null;
+}
+
+export async function fetchTriageExecutions(
+  projectId?: string,
+): Promise<TriageExecution[]> {
+  const qs = projectId ? `?project_id=${projectId}` : "";
+  const res = await fetch(`${API_URL}/api/v1/triage${qs}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch triage executions: ${res.status}`);
+  return (await res.json()).executions;
+}
+
+export async function fetchTriageExecution(id: string): Promise<TriageExecution> {
+  const res = await fetch(`${API_URL}/api/v1/triage/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch triage execution: ${res.status}`);
+  return res.json();
+}
+
+export async function triggerTriage(traceId: string): Promise<TriageExecution> {
+  const res = await fetch(`${API_URL}/api/v1/triage/trigger`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trace_id: traceId }),
+  });
+  if (!res.ok) throw new Error(`Failed to trigger triage: ${res.status}`);
+  return res.json();
+}
+
+export async function simulateTriage(): Promise<TriageExecution> {
+  const res = await fetch(`${API_URL}/api/v1/triage/simulate`, { method: "POST" });
+  if (!res.ok) throw new Error(`Failed to simulate incident: ${res.status}`);
+  return res.json();
+}
+
+export async function decideTriage(
+  id: string,
+  action: "approve" | "reject",
+  comment?: string,
+): Promise<TriageExecution> {
+  const res = await fetch(`${API_URL}/api/v1/triage/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, comment: comment ?? null }),
+  });
+  if (!res.ok) throw new Error(`Failed to ${action} triage execution: ${res.status}`);
+  return res.json();
+}
+
+export function triageWebSocketUrl(id: string): string {
+  return `${API_URL.replace(/^http/, "ws")}/ws/triage/${id}`;
+}

@@ -50,7 +50,9 @@ export default function SessionsPage() {
   }, [projectId]);
 
   useEffect(() => {
-    reload();
+    (async () => {
+      await reload();
+    })();
   }, [reload]);
 
   return (

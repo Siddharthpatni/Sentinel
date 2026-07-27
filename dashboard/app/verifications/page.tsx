@@ -67,7 +67,9 @@ export default function VerificationsPage() {
   }
 
   useEffect(() => {
-    refresh();
+    (async () => {
+      await refresh();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

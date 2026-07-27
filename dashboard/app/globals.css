@@ -18,10 +18,14 @@
   --sentinel-text-muted: #8888a0;
   --sentinel-text-faint: #55556a;
 
-  --sentinel-accent: #7c5cfc;
-  --sentinel-accent-light: #9d85fd;
-  --sentinel-accent-glow: rgba(124, 92, 252, 0.18);
-  --sentinel-accent-dim: rgba(124, 92, 252, 0.08);
+  /* Tactical/HUD cyan — the app's single accent hue (not a categorical
+     series), used for every "brand" touchpoint site-wide: buttons, focus
+     rings, active nav, links. Status colors below still carry all state
+     meaning, so this needed no palette-validator run. */
+  --sentinel-accent: #22d3ee;
+  --sentinel-accent-light: #67e8f9;
+  --sentinel-accent-glow: rgba(34, 211, 238, 0.22);
+  --sentinel-accent-dim: rgba(34, 211, 238, 0.09);
 
   --sentinel-success: #34d399;
   --sentinel-success-dim: rgba(52, 211, 153, 0.12);
@@ -40,6 +44,16 @@
   --background: var(--sentinel-bg);
   --foreground: var(--sentinel-text-primary);
 
+  /* Aliases for the Control Room's HUD-specific classes (AgentGraph,
+     HudPanel, hud-*) — same hue as the accent above, kept as named
+     aliases so those components read clearly as "ops chrome" rather
+     than generic brand color. */
+  --shield-cyan: var(--sentinel-accent);
+  --shield-cyan-light: var(--sentinel-accent-light);
+  --shield-cyan-glow: rgba(34, 211, 238, 0.35);
+  --shield-cyan-dim: var(--sentinel-accent-dim);
+  --shield-grid-line: rgba(34, 211, 238, 0.07);
+
   color-scheme: dark;
 }
 
@@ -57,10 +71,10 @@ html.light {
   --sentinel-text-muted: #6e6e88;
   --sentinel-text-faint: #9a9ab0;
 
-  --sentinel-accent: #6b46f5;
-  --sentinel-accent-light: #5a35e6;
-  --sentinel-accent-glow: rgba(107, 70, 245, 0.18);
-  --sentinel-accent-dim: rgba(107, 70, 245, 0.08);
+  --sentinel-accent: #0e7490;
+  --sentinel-accent-light: #0891b2;
+  --sentinel-accent-glow: rgba(14, 116, 144, 0.20);
+  --sentinel-accent-dim: rgba(14, 116, 144, 0.08);
 
   --sentinel-success: #059669;
   --sentinel-success-dim: rgba(5, 150, 105, 0.10);
@@ -72,6 +86,12 @@ html.light {
   --sentinel-shadow-sm: 0 1px 2px rgba(20, 20, 40, 0.06);
   --sentinel-shadow-md: 0 4px 14px rgba(20, 20, 40, 0.07);
   --sentinel-shadow-lg: 0 12px 28px rgba(20, 20, 40, 0.10);
+
+  --shield-cyan: var(--sentinel-accent);
+  --shield-cyan-light: var(--sentinel-accent-light);
+  --shield-cyan-glow: rgba(14, 116, 144, 0.28);
+  --shield-cyan-dim: var(--sentinel-accent-dim);
+  --shield-grid-line: rgba(14, 116, 144, 0.07);
 
   color-scheme: light;
 }
@@ -121,7 +141,12 @@ html.light {
 }
 
 body {
-  background: var(--sentinel-bg);
+  background-color: var(--sentinel-bg);
+  background-image:
+    linear-gradient(var(--shield-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--shield-grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
   color: var(--sentinel-text-primary);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -325,6 +350,10 @@ table, th, td, input, select, textarea, button, a {
   background: var(--sentinel-error-dim);
   color: var(--sentinel-error);
 }
+.badge-warning {
+  background: var(--sentinel-warning-dim);
+  color: var(--sentinel-warning);
+}
 
 /* ============================================
    JSON Viewer
@@ -407,6 +436,130 @@ table, th, td, input, select, textarea, button, a {
   background: var(--sentinel-surface-hover);
   border-color: var(--sentinel-text-muted);
   color: var(--sentinel-text-primary);
+}
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--sentinel-success);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-success:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--sentinel-success-dim);
+}
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--sentinel-error-dim);
+  color: var(--sentinel-error);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-danger:hover {
+  background: var(--sentinel-error);
+  color: white;
+  transform: translateY(-1px);
+}
+.btn-primary:disabled,
+.btn-danger:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   Triage state-graph step indicator
+   ============================================ */
+
+.state-graph {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.state-graph-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--sentinel-border-subtle);
+  background: var(--sentinel-surface);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sentinel-text-muted);
+  transition: all 0.3s ease;
+}
+.state-graph-step.is-active {
+  border-color: var(--sentinel-accent);
+  color: var(--sentinel-accent-light);
+  background: var(--sentinel-accent-dim);
+  animation: pulse-glow 1.8s ease-in-out infinite;
+}
+.state-graph-step.is-done {
+  border-color: var(--sentinel-success);
+  color: var(--sentinel-success);
+  background: var(--sentinel-success-dim);
+}
+.state-graph-step.is-failed {
+  border-color: var(--sentinel-error);
+  color: var(--sentinel-error);
+  background: var(--sentinel-error-dim);
+}
+.state-graph-connector {
+  width: 20px;
+  height: 1px;
+  background: var(--sentinel-border);
+}
+
+/* ============================================
+   Diff Viewer
+   ============================================ */
+
+.diff-viewer {
+  background: var(--sentinel-bg);
+  border: 1px solid var(--sentinel-border-subtle);
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 420px;
+  font-family: var(--font-geist-mono), "SF Mono", "Fira Code", monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.diff-line {
+  display: flex;
+  white-space: pre;
+  padding: 0 12px;
+}
+.diff-line-add {
+  background: var(--sentinel-success-dim);
+  color: var(--sentinel-success);
+}
+.diff-line-remove {
+  background: var(--sentinel-error-dim);
+  color: var(--sentinel-error);
+}
+.diff-line-hunk {
+  color: var(--sentinel-accent-light);
+  background: var(--sentinel-accent-dim);
+}
+.diff-line-context {
+  color: var(--sentinel-text-secondary);
 }
 
 /* ============================================
@@ -624,3 +777,345 @@ html.light .skeleton {
 }
 html.light .btn-primary { color: white; }
 html.light .toast { box-shadow: var(--sentinel-shadow-md); }
+
+/* ============================================
+   Control Room — tactical/HUD chrome
+   (scoped to the incident triage view only —
+   rest of the dashboard keeps the purple accent)
+   ============================================ */
+
+.hud-frame {
+  position: relative;
+}
+.hud-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--shield-cyan);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.hud-corner-tl { top: -1px; left: -1px; border-right: none; border-bottom: none; border-top-left-radius: 4px; }
+.hud-corner-tr { top: -1px; right: -1px; border-left: none; border-bottom: none; border-top-right-radius: 4px; }
+.hud-corner-bl { bottom: -1px; left: -1px; border-right: none; border-top: none; border-bottom-left-radius: 4px; }
+.hud-corner-br { bottom: -1px; right: -1px; border-left: none; border-top: none; border-bottom-right-radius: 4px; }
+
+.hud-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--shield-cyan-light);
+}
+.hud-title::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--shield-cyan);
+  box-shadow: 0 0 6px var(--shield-cyan-glow);
+  flex-shrink: 0;
+}
+.hud-label {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sentinel-text-muted);
+}
+
+@keyframes hud-scan {
+  0% { transform: translateY(-60%); }
+  100% { transform: translateY(160%); }
+}
+.hud-grid-bg {
+  position: relative;
+  overflow: hidden;
+  background-image:
+    linear-gradient(var(--shield-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--shield-grid-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.hud-grid-bg::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, var(--shield-cyan-dim) 50%, transparent);
+  opacity: 0.6;
+  animation: hud-scan 7s linear infinite;
+  pointer-events: none;
+}
+
+/* ============================================
+   Agent execution graph — hexagonal nodes
+   ============================================ */
+
+.agent-graph {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  flex-wrap: wrap;
+  row-gap: 20px;
+}
+.agent-node-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 92px;
+  flex-shrink: 0;
+}
+.agent-node {
+  --hex: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
+  width: 74px;
+  height: 66px;
+  clip-path: var(--hex);
+  background: var(--sentinel-border);
+  padding: 2px;
+  transition: background 0.3s ease, filter 0.3s ease;
+}
+.agent-node-inner {
+  width: 100%;
+  height: 100%;
+  clip-path: var(--hex);
+  background: var(--sentinel-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sentinel-text-faint);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+@keyframes hud-node-pulse {
+  0%, 100% { filter: drop-shadow(0 0 5px var(--shield-cyan-glow)); }
+  50% { filter: drop-shadow(0 0 14px var(--shield-cyan-glow)); }
+}
+.agent-node.is-active {
+  background: var(--shield-cyan);
+  animation: hud-node-pulse 1.7s ease-in-out infinite;
+}
+.agent-node.is-active .agent-node-inner {
+  background: var(--shield-cyan-dim);
+  color: var(--shield-cyan-light);
+}
+.agent-node.is-done {
+  background: var(--sentinel-success);
+  filter: drop-shadow(0 0 4px var(--sentinel-success-dim));
+}
+.agent-node.is-done .agent-node-inner {
+  color: var(--sentinel-success);
+}
+.agent-node.is-failed {
+  background: var(--sentinel-error);
+  filter: drop-shadow(0 0 6px var(--sentinel-error-dim));
+}
+.agent-node.is-failed .agent-node-inner {
+  color: var(--sentinel-error);
+}
+.agent-node.is-skipped {
+  background: var(--sentinel-border-subtle);
+  opacity: 0.45;
+}
+.agent-node.is-skipped .agent-node-inner {
+  color: var(--sentinel-text-faint);
+}
+.agent-node-label {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--sentinel-text-muted);
+  line-height: 1.3;
+}
+.agent-node-wrap:has(.is-active) .agent-node-label { color: var(--shield-cyan-light); }
+.agent-node-wrap:has(.is-done) .agent-node-label { color: var(--sentinel-text-secondary); }
+
+.agent-edge {
+  display: flex;
+  align-items: center;
+  width: 20px;
+  height: 34px;
+  flex-shrink: 0;
+  position: relative;
+}
+.agent-edge::before {
+  content: '';
+  width: 100%;
+  height: 2px;
+  background: var(--sentinel-border);
+}
+.agent-edge::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--sentinel-border);
+  border-right: 2px solid var(--sentinel-border);
+  transform: rotate(45deg);
+}
+.agent-edge.is-done::before { background: var(--sentinel-success); }
+.agent-edge.is-done::after { border-color: var(--sentinel-success); }
+.agent-edge.is-active::before {
+  background: var(--shield-cyan);
+  box-shadow: 0 0 8px var(--shield-cyan-glow);
+}
+.agent-edge.is-active::after { border-color: var(--shield-cyan); }
+
+.agent-bypass-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--shield-cyan-light);
+  background: var(--shield-cyan-dim);
+  border: 1px dashed color-mix(in srgb, var(--shield-cyan) 45%, transparent);
+}
+
+/* ============================================
+   Sidebar mini-charts (fleet telemetry)
+   ============================================ */
+
+.mini-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mini-bar-label {
+  width: 88px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sentinel-text-muted);
+}
+.mini-bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sentinel-border-subtle);
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mini-bar-value {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--sentinel-text-secondary);
+}
+
+.radial-gauge {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--shield-cyan) calc(var(--gauge-pct, 0) * 1%),
+    var(--sentinel-border-subtle) 0
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.radial-gauge::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--sentinel-surface);
+}
+.radial-gauge-value {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sentinel-text-primary);
+}
+
+html.light .agent-node-inner { background: var(--sentinel-surface); }
+html.light .hud-grid-bg { background-color: var(--sentinel-bg); }
+
+.btn-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--shield-cyan);
+  color: #041016;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-hud:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px var(--shield-cyan-glow);
+  transform: translateY(-1px);
+}
+.btn-hud:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hud-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--shield-cyan);
+  box-shadow: 0 0 8px var(--shield-cyan-glow);
+  animation: hud-node-pulse 1.7s ease-in-out infinite;
+}
+
+.hud-table {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.hud-table th {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--shield-cyan-light);
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid color-mix(in srgb, var(--shield-cyan) 25%, var(--sentinel-border-subtle));
+}
+.hud-table td {
+  padding: 12px 16px;
+  color: var(--sentinel-text-secondary);
+  border-bottom: 1px solid var(--sentinel-border-subtle);
+}
+.hud-table tr { cursor: pointer; transition: background-color 0.15s ease; }
+.hud-table tbody tr:hover td {
+  background-color: var(--shield-cyan-dim);
+  color: var(--sentinel-text-primary);
+}

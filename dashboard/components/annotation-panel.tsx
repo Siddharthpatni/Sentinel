@@ -32,7 +32,9 @@ export function AnnotationPanel({ traceId }: { traceId: string }) {
   }, [traceId]);
 
   useEffect(() => {
-    reload();
+    (async () => {
+      await reload();
+    })();
   }, [reload]);
 
   const submit = async () => {

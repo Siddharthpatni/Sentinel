@@ -27,7 +27,9 @@ export default function AnnotationsQueuePage() {
   }
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, []);
 
   return (

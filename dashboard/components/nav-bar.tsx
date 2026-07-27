@@ -13,6 +13,7 @@ const links = [
   { href: "/evals", label: "Evals" },
   { href: "/datasets", label: "Datasets" },
   { href: "/audit", label: "Audit" },
+  { href: "/incidents", label: "Incidents" },
   { href: "/annotations", label: "Queue" },
   { href: "/alerts", label: "Alerts" },
   { href: "/settings/keys", label: "Keys" },
@@ -20,6 +21,11 @@ const links = [
 
 export function NavBar() {
   const pathname = usePathname();
+
+  // /incident-panel renders its own full-viewport shell (sidebar + top
+  // bar), so it opts out of the global horizontal nav rather than stacking
+  // two navigation bars.
+  if (pathname?.startsWith("/incident-panel")) return null;
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -43,7 +49,7 @@ export function NavBar() {
               className={
                 "rounded-md px-3 py-1.5 transition-colors " +
                 (isActive(l.href)
-                  ? "bg-surface-1 text-fg"
+                  ? "bg-accent-soft text-fg shadow-[inset_0_-2px_0_var(--sentinel-accent)]"
                   : "text-muted hover:bg-surface-1 hover:text-fg")
               }
             >

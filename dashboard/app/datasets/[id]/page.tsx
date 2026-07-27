@@ -33,7 +33,9 @@ export default function DatasetDetailPage() {
   }
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [id]);
 
   async function remove(itemId: string) {

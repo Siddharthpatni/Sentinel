@@ -25,8 +25,10 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setTheme(getCurrentTheme());
-    setMounted(true);
+    (() => {
+      setTheme(getCurrentTheme());
+      setMounted(true);
+    })();
   }, []);
 
   function toggle() {

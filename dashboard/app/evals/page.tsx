@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Eval {
@@ -37,6 +38,7 @@ cases:
 `;
 
 export default function EvalsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [evals, setEvals] = useState<Eval[]>([]);
@@ -65,7 +67,9 @@ export default function EvalsPage() {
   }
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,7 +108,7 @@ export default function EvalsPage() {
       });
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
       const run = await res.json();
-      window.location.href = `/evals/${e.id}/runs/${run.id}`;
+      router.push(`/evals/${e.id}/runs/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "run failed");
     }

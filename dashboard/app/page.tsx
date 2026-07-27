@@ -172,26 +172,6 @@ function IconRefresh() {
   );
 }
 
-function IconRadar() {
-  return (
-    <svg
-      width="28"
-      height="28"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" opacity="0.3" />
-      <circle cx="12" cy="12" r="6" opacity="0.5" />
-      <circle cx="12" cy="12" r="2" />
-      <line x1="12" y1="2" x2="12" y2="6" />
-    </svg>
-  );
-}
-
 function IconEmpty() {
   return (
     <svg
@@ -254,7 +234,9 @@ export default function DashboardPage() {
   }, [providerFilter, modelFilter]);
 
   useEffect(() => {
-    loadData();
+    (async () => {
+      await loadData();
+    })();
   }, [loadData]);
 
   // Auto-refresh every 3 seconds

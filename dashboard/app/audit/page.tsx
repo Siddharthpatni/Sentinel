@@ -48,7 +48,9 @@ export default function AuditPage() {
   }, [projectId]);
 
   useEffect(() => {
-    reload();
+    (async () => {
+      await reload();
+    })();
   }, [reload]);
 
   async function submit(e: React.FormEvent) {
