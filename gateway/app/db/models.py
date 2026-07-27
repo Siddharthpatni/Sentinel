@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -27,6 +28,16 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 # `create_all`. We don't rely on JSONB-specific operators in the ORM layer,
 # so the variant is transparent at the Python level.
 JSONType = JSON().with_variant(JSONB(), "postgresql")
+
+# Portable embedding column: a real pgvector `vector(384)` on Postgres (so
+# `code_chunks` can be queried with the `<=>` cosine-distance operator and an
+# ivfflat index), plain JSON on SQLite so the in-memory test DB can still
+# `create_all`. 384 dims matches the local sentence-transformers
+# all-MiniLM-L6-v2 model (see app/agents/embeddings.py) — round-trips as
+# `list[float]` in Python on both dialects; the similarity search itself is
+# Postgres-only (see app/agents/rag.py) and is never exercised against the
+# SQLite fallback.
+EmbeddingType = Vector(384).with_variant(JSON(), "sqlite")
 
 
 class Base(DeclarativeBase):
@@ -608,3 +619,108 @@ class ApiKey(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "label", name="uq_api_keys_project_label"),
     )
+
+
+class CodeChunk(Base):
+    """One embedded slice of the Sentinel codebase, used for triage RAG.
+
+    Populated by ``app.agents.rag.reindex_codebase``. Chunks are plain
+    sliding-window slices of source files (no AST parsing) keyed by
+    ``content_hash`` so re-indexing only re-embeds what actually changed.
+    """
+
+    __tablename__ = "code_chunks"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    start_line: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_line: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(EmbeddingType, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "file_path", "start_line", "end_line", name="uq_code_chunks_file_range"
+        ),
+        Index("ix_code_chunks_file_path", "file_path"),
+    )
+
+
+class TriageExecution(Base):
+    """One run of the autonomous incident-triage state machine.
+
+    Nodes advance this row's ``current_node``/``status`` and checkpoint
+    their output (``diagnosis``, ``proposed_patch``, ``patch_risk_tier``) as
+    they go, so an in-flight or paused execution can always be resumed from
+    what's already persisted here.
+    """
+
+    __tablename__ = "triage_executions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    trace_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("traces.id", ondelete="CASCADE"), nullable=False
+    )
+    # "running" | "paused_for_approval" | "approved" | "rejected" | "completed" | "failed"
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="running")
+    # "diagnostic" | "planner" | "compliance" | "execution" | "done"
+    current_node: Mapped[str] = mapped_column(String(20), nullable=False, default="diagnostic")
+    diagnosis: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    proposed_patch: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    # "low" | "medium" | "high" — this feature's blast-radius score for the
+    # proposed patch. Deliberately distinct from Trace.risk_tier (the
+    # EU-AI-Act use-case tier); see app/agents/risk.py.
+    patch_risk_tier: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    compliance_reasons: Mapped[list[str]] = mapped_column(JSONType, nullable=False, default=list)
+    pr_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_triage_executions_project_id", "project_id"),
+        Index("ix_triage_executions_trace_id", "trace_id"),
+        Index("ix_triage_executions_status", "status"),
+    )
+
+
+class TriageApproval(Base):
+    """Append-only human decision log for a TriageExecution.
+
+    Each approve/reject click writes one row here (never mutated). The
+    dashboard's Compliance Badge also surfaces the matching AuditLogEntry
+    written alongside it (see app.audit.ledger.append_for_triage_decision)
+    so the "EU AI Act audit log preview" is the real hash-chained ledger.
+    """
+
+    __tablename__ = "triage_approvals"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    execution_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("triage_executions.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # "approve" | "reject"
+    action: Mapped[str] = mapped_column(String(10), nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    __table_args__ = (Index("ix_triage_approvals_execution_id", "execution_id"),)

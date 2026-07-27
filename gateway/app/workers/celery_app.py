@@ -10,7 +10,7 @@ celery_app = Celery(
     "sentinel",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.workers.persist_trace", "app.workers.evaluate_trace"],
+    include=["app.workers.persist_trace", "app.workers.evaluate_trace", "app.agents.triage"],
 )
 
 celery_app.conf.update(

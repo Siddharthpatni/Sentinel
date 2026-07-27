@@ -1,4 +1,4 @@
-.PHONY: demo up down seed logs test lint
+.PHONY: demo up down seed reindex logs test lint
 
 demo:
 	./scripts/demo.sh
@@ -11,6 +11,9 @@ down:
 
 seed:
 	python examples/seed_demo.py
+
+reindex:
+	python scripts/index_codebase.py
 
 logs:
 	docker compose logs -f gateway dashboard

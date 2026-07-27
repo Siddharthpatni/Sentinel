@@ -8,7 +8,6 @@ import time
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from sqlalchemy import select
 
 from app.config import settings
 from app.db.models import Project

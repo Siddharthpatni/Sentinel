@@ -8,12 +8,13 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
+from app.api.v1 import agents as triage_agents
 from app.config import settings
 from app.db.models import Base
 from app.db.seed import seed_default_project
 from app.db.session import AsyncSessionLocal, async_engine
-from app.security.keyvault import redact_event
 from app.routes import (
     alerts,
     annotations,
@@ -30,6 +31,7 @@ from app.routes import (
     traces,
     verifications,
 )
+from app.security.keyvault import redact_event
 
 
 def configure_logging() -> None:
@@ -67,6 +69,10 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 
     # Create tables (for dev/local — production uses Alembic)
     async with async_engine.begin() as conn:
+        # code_chunks.embedding is a pgvector column (app/db/models.py); the
+        # extension has to exist before create_all's CREATE TABLE runs.
+        if conn.dialect.name == "postgresql":
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables ensured")
 
@@ -115,6 +121,8 @@ app.include_router(credentials.router)
 app.include_router(datasets.router)
 app.include_router(auth.router)
 app.include_router(api_keys.router)
+app.include_router(triage_agents.router)
+app.include_router(triage_agents.ws_router)
 
 
 @app.get("/health")

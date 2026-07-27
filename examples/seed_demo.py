@@ -176,6 +176,27 @@ def seed_control_plane(s: Sentinel, project_id: str) -> None:
         print(f"   skipped: {exc}")
 
 
+def seed_incident(s: Sentinel) -> None:
+    """Fire a synthetic failing trace through /api/v1/triage/simulate.
+
+    Best-effort: the triage pipeline defaults to a local Ollama model
+    (see README "Running triage fully offline"), so this is skipped
+    gracefully if Ollama isn't running rather than failing the whole seed.
+    """
+    print("→ triggering a synthetic incident (autonomous triage demo)...")
+    try:
+        execution = s._post("/api/v1/triage/simulate", json={})
+        print(f"   ok · execution {execution['id']}")
+        print(f"   watch it live: {GATEWAY.replace(':8000', ':3000')}/incidents/{execution['id']}")
+    except Exception as exc:
+        print(f"   skipped: {exc}")
+        print(
+            "   (triage needs a local Ollama model — see README 'Running "
+            "triage fully offline' — or click 'Simulate Incident' on "
+            "/incidents once configured)"
+        )
+
+
 def main() -> None:
     need_openai_key()
 
@@ -200,6 +221,8 @@ def main() -> None:
     fire_agent_span_tree(client)
     print()
     seed_control_plane(s, project_id)
+    print()
+    seed_incident(s)
 
     s.close()
     print(

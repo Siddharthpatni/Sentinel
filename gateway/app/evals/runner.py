@@ -57,7 +57,7 @@ def _call_gateway(
     latency_ms = int((time.monotonic() - start) * 1000)
     try:
         data = resp.json()
-    except Exception:  # noqa: BLE001
+    except Exception:
         data = {"_raw": resp.text}
     return data, latency_ms, resp.status_code
 
@@ -70,7 +70,7 @@ def _compute_call_cost(response: dict) -> float:
         prompt = int(usage.get("prompt_tokens", 0) or 0)
         completion = int(usage.get("completion_tokens", 0) or 0)
         return float(compute_cost(model, prompt, completion).total_cost_usd)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return 0.0
 
 
@@ -92,7 +92,7 @@ def _find_trace_id(session: Session, response: dict, project_id: uuid.UUID) -> u
             row = session.get(Trace, trace_id)
             if row and isinstance(row.response_body, dict) and row.response_body.get("id") == rid:
                 return trace_id
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug("trace id lookup failed: %s", exc)
     return None
 
@@ -132,7 +132,7 @@ def run_suite(
             response, latency_ms, status_code = _call_gateway(
                 suite.target.endpoint, body, api_key
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("eval case %s: gateway call failed: %s", case.name, exc)
             session.add(EvalCase(
                 id=uuid.uuid4(),

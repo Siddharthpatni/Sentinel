@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from app.db.models import Base, Project
-from app.db.session import AsyncSessionLocal
 from app.main import app
 
 
@@ -70,7 +69,7 @@ async def test_create_rule_happy_path(client: AsyncClient, project: Project) -> 
     assert body["enabled"] is True
 
 
-async def test_create_rule_unknown_project(client: AsyncClient) -> None:
+async def test_create_rule_unknown_project(client: AsyncClient, db_session: AsyncSession) -> None:
     payload = {
         "project_id": str(uuid.uuid4()),
         "name": "x",

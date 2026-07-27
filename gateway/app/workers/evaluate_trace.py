@@ -40,7 +40,7 @@ GATEWAY_INTERNAL_URL = "http://gateway:8000/v1/chat/completions"
 def _matches(rule: VerificationRule, request_body: dict) -> bool:
     try:
         expr = jsonpath_parse(rule.match_jsonpath)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.warning("Invalid JSONPath on rule %s: %r", rule.id, rule.match_jsonpath)
         return False
     return bool(expr.find(request_body))
@@ -91,7 +91,7 @@ def evaluate_trace(self, trace_id: str) -> dict:  # type: ignore[no-untyped-def]
             summary["evaluated"] += 1
             summary["verdicts"].append(verdict)
         session.commit()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         session.rollback()
         logger.exception("evaluate_trace failed for %s: %s", trace_id, exc)
     finally:
@@ -108,7 +108,7 @@ def _run_one_rule(session, trace: Trace, rule: VerificationRule) -> str:
         prompt = render_judge_prompt(
             rule.judge_prompt_template, request_body, response_body
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("Judge prompt render failed for rule %s: %s", rule.id, exc)
         _write_verification(session, trace, rule, verdict="error", reasoning=str(exc))
         return "error"
@@ -130,7 +130,7 @@ def _run_one_rule(session, trace: Trace, rule: VerificationRule) -> str:
             GATEWAY_INTERNAL_URL, json=judge_request, headers=headers, timeout=60.0
         )
         body = resp.json()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("Judge HTTP call failed: %s", exc)
         _write_verification(session, trace, rule, verdict="error", reasoning=str(exc))
         return "error"

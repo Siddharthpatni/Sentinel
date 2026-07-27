@@ -72,7 +72,7 @@ def run_assertion(assertion: Any, call: CallResult) -> AssertionResult:
                 passed=False,
                 detail="llm_judge not wired (requires Phase 2 Step 11 eval runner)",
             )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return AssertionResult(type=getattr(assertion, "type", "?"), passed=False, detail=str(exc))
 
     return AssertionResult(type="unknown", passed=False, detail="unknown assertion type")
@@ -114,5 +114,5 @@ def _run_json_schema(a: JsonSchemaAssertion, call: CallResult) -> AssertionResul
     try:
         validate(call.response, a.schema_)
         return AssertionResult(type=a.type, passed=True, detail="schema matched")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return AssertionResult(type=a.type, passed=False, detail=str(exc))

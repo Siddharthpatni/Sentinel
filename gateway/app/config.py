@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     openrouter_referer: str = "https://github.com/Siddharthpatni/Sentinel"
     openrouter_title: str = "Sentinel"
 
+    # --- Ollama (local, offline LLM) ---
+    # Host default assumes `ollama serve` running natively on the machine.
+    # docker-compose.yml overrides this to http://host.docker.internal:11434
+    # so the containerized gateway/worker can reach the host's Ollama.
+    ollama_base_url: str = "http://localhost:11434"
+
     # --- Sentinel ---
     default_project_api_key: str = "sk-sentinel-dev-000"
     default_project_name: str = "default"
@@ -50,6 +56,32 @@ class Settings(BaseSettings):
 
     # --- Streaming ---
     max_stream_buffer_bytes: int = 10 * 1024 * 1024  # 10 MB cap
+
+    # --- Autonomous Incident Triage ---
+    # `ollama/` prefix routes through the local Ollama adapter (see
+    # app/providers/ollama.py) — qwen2.5-coder:7b is already pulled locally
+    # and code-focused, so triage runs fully offline with $0 marginal cost.
+    # Ollama tags always need an explicit size suffix (`ollama list`); there
+    # is no bare "qwen2.5-coder" tag.
+    triage_llm_model: str = "ollama/qwen2.5-coder:7b"
+    # sentence-transformers model name, loaded locally (app/agents/embeddings.py)
+    triage_embedding_model: str = "all-MiniLM-L6-v2"
+    triage_auto_approve_low_risk: bool = True
+
+    # --- Local Cache Registry ---
+    # Exact-hash + semantic (cosine similarity) cache of triage resolutions,
+    # keyed off the incident signature (see app/agents/triage.py). A hit
+    # skips both the diagnostic and remediation-planning LLM calls.
+    sentinel_cache_enabled: bool = True
+    sentinel_cache_db_path: str = ".sentinel/cache/sentinel_cache.db"
+    sentinel_cache_similarity_threshold: float = 0.88
+
+    # GitHub PR creation for approved fixes. Execution falls back to writing
+    # a local .sentinel/patches/ artifact when github_token is unset — the
+    # feature works out of the box on a fresh clone without secrets.
+    github_token: str = ""
+    triage_github_repo: str = ""  # "owner/repo"
+    triage_github_base_branch: str = "main"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

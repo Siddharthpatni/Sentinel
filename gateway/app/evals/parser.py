@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -54,15 +54,7 @@ class JsonSchemaAssertion(BaseModel):
 
 
 Assertion = Annotated[
-    Union[
-        ContainsAssertion,
-        EqualsAssertion,
-        RegexAssertion,
-        MaxLatencyAssertion,
-        MaxCostAssertion,
-        LlmJudgeAssertion,
-        JsonSchemaAssertion,
-    ],
+    ContainsAssertion | EqualsAssertion | RegexAssertion | MaxLatencyAssertion | MaxCostAssertion | LlmJudgeAssertion | JsonSchemaAssertion,
     Field(discriminator="type"),
 ]
 

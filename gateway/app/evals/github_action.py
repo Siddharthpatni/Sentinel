@@ -51,7 +51,7 @@ def _call(url: str, body: dict, api_key: str, timeout: float) -> tuple[dict, int
     latency_ms = int((time.monotonic() - start) * 1000)
     try:
         data = resp.json()
-    except Exception:  # noqa: BLE001
+    except Exception:
         data = {"_raw": resp.text}
     return data, latency_ms, resp.status_code
 
@@ -66,7 +66,7 @@ def _cost(response: dict) -> float:
                 int(usage.get("completion_tokens", 0) or 0),
             ).total_cost_usd
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         return 0.0
 
 
@@ -78,7 +78,7 @@ def _run(suite: EvalSuiteSpec, gateway_url: str, api_key: str, timeout: float) -
         body.setdefault("model", suite.target.model)
         try:
             response, latency_ms, status = _call(url, body, api_key, timeout)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             outcomes.append(CaseOutcome(
                 name=case.name,
                 passed=False,

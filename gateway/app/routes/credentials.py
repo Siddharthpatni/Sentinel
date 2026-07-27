@@ -10,11 +10,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
-
-import httpx
 
 from app.db.models import Project, ProviderCredential
 from app.db.session import AsyncSessionLocal

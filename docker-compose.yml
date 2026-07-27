@@ -1,7 +1,7 @@
 services:
   # --- Postgres ---
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sentinel}
@@ -42,6 +42,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
       DATABASE_URL_SYNC: postgresql+psycopg2://sentinel:sentinel@postgres:5432/sentinel
       REDIS_URL: redis://redis:6379/0
+      # Reach the host's native `ollama serve` from inside the container.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +63,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://sentinel:sentinel@postgres:5432/sentinel
       DATABASE_URL_SYNC: postgresql+psycopg2://sentinel:sentinel@postgres:5432/sentinel
       REDIS_URL: redis://redis:6379/0
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
     depends_on:
       postgres:
         condition: service_healthy

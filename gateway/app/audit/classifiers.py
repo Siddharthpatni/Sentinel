@@ -15,7 +15,7 @@ matches the request. No match ⇒ ``risk_tier`` stays ``None``.
 from __future__ import annotations
 
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from jsonpath_ng.ext import parse as jsonpath_parse
 
@@ -31,7 +31,7 @@ def classify(body: dict, classifiers: Iterable) -> str | None:
             continue
         try:
             expr = jsonpath_parse(c.match_jsonpath)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("Invalid JSONPath on classifier %s: %r", c.id, c.match_jsonpath)
             continue
         if expr.find(body):

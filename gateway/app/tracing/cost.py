@@ -52,6 +52,23 @@ COST_TABLE: dict[str, tuple[float, float]] = {
     "claude-3-opus-20240229": (15.00, 75.00),
     "claude-3-sonnet-20240229": (3.00, 15.00),
     "claude-3-haiku-20240307": (0.25, 1.25),
+    # Local Ollama models — $0, no per-token billing since inference runs
+    # on-machine. Keyed by the bare model tag (the `ollama/` routing prefix
+    # is stripped before the upstream call, see app/providers/ollama.py).
+    # Ollama tags need an explicit size suffix (see `ollama list`); bare
+    # names are included too in case a "latest"-tagged pull is used instead.
+    "qwen2.5-coder:1.5b": (0.0, 0.0),
+    "qwen2.5-coder:3b": (0.0, 0.0),
+    "qwen2.5-coder:7b": (0.0, 0.0),
+    "qwen2.5-coder": (0.0, 0.0),
+    "qwen2.5": (0.0, 0.0),
+    "llama3.1:8b": (0.0, 0.0),
+    "llama3.1": (0.0, 0.0),
+    "llama3.2": (0.0, 0.0),
+    "deepseek-r1": (0.0, 0.0),
+    "gemma4:e4b": (0.0, 0.0),
+    "gemma4:12b": (0.0, 0.0),
+    "gemma4": (0.0, 0.0),
 }
 
 # Fallback for unknown models

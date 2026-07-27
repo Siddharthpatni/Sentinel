@@ -82,7 +82,7 @@ class EvalRunCreate(BaseModel):
 async def create_eval(payload: EvalCreate) -> EvalResponse:
     try:
         suite = parse_suite_yaml(payload.yaml_source)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid YAML suite: {exc}") from exc
 
     async with AsyncSessionLocal() as session:

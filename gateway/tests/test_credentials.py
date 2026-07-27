@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import uuid
 
+import httpx
 import pytest
 import respx
-import httpx
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool

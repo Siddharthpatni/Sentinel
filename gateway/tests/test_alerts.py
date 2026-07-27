@@ -84,7 +84,7 @@ async def test_evaluate_cost_per_hour(session_factory, project, traces_in_window
             metric="cost_per_hour_usd",
             window_minutes=60,
         )
-    # 10 traces × $0.01 = $0.10 over 60min → 0.10/hour
+    # 10 traces x $0.01 = $0.10 over 60min -> 0.10/hour
     assert value == pytest.approx(0.10, rel=0.01)
 
 

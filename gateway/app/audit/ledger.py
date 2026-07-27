@@ -22,12 +22,14 @@ import json
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import desc, select
-from sqlalchemy.orm import Session
 
-from app.db.models import AuditLogEntry, Trace
+from app.db.models import AuditLogEntry, Trace, TriageApproval, TriageExecution
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +109,61 @@ def append_for_trace(session: Session, trace: Trace) -> AuditLogEntry:
         project_id=trace.project_id,
         trace_id=trace.id,
         risk_tier=trace.risk_tier,
+        payload=payload,
+        prev_hash=prev_hash,
+        entry_hash=entry_hash,
+    )
+    session.add(entry)
+    return entry
+
+
+def append_for_triage_decision(
+    session: Session, execution: TriageExecution, approval: TriageApproval
+) -> AuditLogEntry:
+    """Append one audit entry for a human approve/reject decision on a triage run.
+
+    Chains into the same per-project sequence as trace entries — the ledger
+    is one continuous, auditable timeline regardless of what produced each
+    entry. Caller commits.
+    """
+    last = (
+        session.execute(
+            select(AuditLogEntry)
+            .where(AuditLogEntry.project_id == execution.project_id)
+            .order_by(desc(AuditLogEntry.sequence))
+            .limit(1)
+        )
+        .scalars()
+        .first()
+    )
+    sequence = (last.sequence + 1) if last else 1
+    prev_hash = last.entry_hash if last else None
+
+    payload = {
+        "kind": "triage_decision",
+        "execution_id": str(execution.id),
+        "action": approval.action,
+        "comment": approval.comment,
+        "user_id": str(approval.user_id) if approval.user_id else None,
+        "patch_risk_tier": execution.patch_risk_tier,
+        "decided_at": approval.created_at.isoformat() if approval.created_at else None,
+    }
+    entry_hash = compute_entry_hash(
+        sequence=sequence,
+        project_id=execution.project_id,
+        trace_id=execution.trace_id,
+        risk_tier=execution.patch_risk_tier,
+        payload=payload,
+        prev_hash=prev_hash,
+    )
+
+    entry = AuditLogEntry(
+        id=uuid.uuid4(),
+        sequence=sequence,
+        created_at=datetime.now(UTC),
+        project_id=execution.project_id,
+        trace_id=execution.trace_id,
+        risk_tier=execution.patch_risk_tier,
         payload=payload,
         prev_hash=prev_hash,
         entry_hash=entry_hash,

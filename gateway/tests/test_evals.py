@@ -42,7 +42,7 @@ def test_parse_suite_yaml_happy():
 
 def test_parse_invalid_assertion_type():
     bad = SAMPLE_YAML.replace("type: contains", "type: not_a_real_type")
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         parse_suite_yaml(bad)
 
 

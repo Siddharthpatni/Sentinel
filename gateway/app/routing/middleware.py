@@ -57,7 +57,7 @@ async def select_route(
     for p in policies:
         try:
             expr = jsonpath_parse(p.match_jsonpath)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("Invalid JSONPath on policy %s: %r", p.id, p.match_jsonpath)
             continue
         if expr.find(body):
@@ -98,9 +98,7 @@ def apply_candidate(body: dict, route: RoutedRequest, attempt: int) -> dict:
 
 
 def should_fall_back(status_code: int, fallback_on: dict) -> bool:
-    if status_code >= 500 and fallback_on.get("http_5xx", True):
-        return True
-    return False
+    return bool(status_code >= 500 and fallback_on.get("http_5xx", True))
 
 
 def consume_candidate(route: RoutedRequest) -> None:

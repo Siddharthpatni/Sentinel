@@ -116,6 +116,9 @@ _ENV_FALLBACK = {
     "anthropic": lambda: settings.anthropic_api_key,
     "openrouter": lambda: settings.openrouter_api_key,
     "gemini": lambda: "",  # no env var yet — extend Settings if needed
+    # Local Ollama takes no credential — the dummy value just satisfies the
+    # `if env_key:` truthiness check below so callers never hit the 402.
+    "ollama": lambda: "local",
 }
 
 

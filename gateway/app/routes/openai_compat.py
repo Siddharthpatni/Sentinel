@@ -14,16 +14,17 @@ from app.audit.classifiers import classify
 from app.config import settings
 from app.db.models import AuditClassifier, Project
 from app.db.session import AsyncSessionLocal
+from app.providers.ollama import OllamaAdapter
 from app.providers.openai import OpenAIAdapter
 from app.providers.openrouter import OpenRouterAdapter
 from app.routes.annotations import resolve_session_id
-from app.security.keyvault import get_provider_key
 from app.routing.middleware import (
     apply_candidate,
     consume_candidate,
     select_route,
     should_fall_back,
 )
+from app.security.keyvault import get_provider_key
 from app.tracing.cost import compute_cost
 from app.tracing.recorder import record_trace
 from app.tracing.schema import TraceCreate
@@ -33,18 +34,24 @@ router = APIRouter()
 
 adapter = OpenAIAdapter()
 openrouter_adapter = OpenRouterAdapter()
+ollama_adapter = OllamaAdapter()
+
+Adapter = OpenAIAdapter | OpenRouterAdapter | OllamaAdapter
 
 
-def _select_adapter(model: str) -> tuple[OpenAIAdapter | OpenRouterAdapter, str, str]:
+def _select_adapter(model: str) -> tuple[Adapter, str, str]:
     """Pick the upstream adapter from the model string.
 
     Convention: prefix the model with ``openrouter/`` to route through
-    OpenRouter, e.g. ``openrouter/anthropic/claude-3-haiku``. The prefix is
-    stripped before the upstream call. Returns (adapter, upstream_model,
-    provider_name).
+    OpenRouter (e.g. ``openrouter/anthropic/claude-3-haiku``), or ``ollama/``
+    to route to a local Ollama instance (e.g. ``ollama/qwen2.5-coder``). The
+    prefix is stripped before the upstream call. Returns (adapter,
+    upstream_model, provider_name).
     """
     if model.startswith("openrouter/"):
         return openrouter_adapter, model.removeprefix("openrouter/"), "openrouter"
+    if model.startswith("ollama/"):
+        return ollama_adapter, model.removeprefix("ollama/"), "ollama"
     return adapter, model, "openai"
 
 
@@ -202,7 +209,7 @@ async def _handle_non_stream(
     project: Project,
     body: dict,
     headers: dict[str, str],
-    selected_adapter: OpenAIAdapter | OpenRouterAdapter,
+    selected_adapter: Adapter,
     provider_name: str,
     risk_tier: str | None = None,
     session_id=None,
@@ -238,7 +245,7 @@ async def _handle_stream(
     project: Project,
     body: dict,
     headers: dict[str, str],
-    selected_adapter: OpenAIAdapter | OpenRouterAdapter,
+    selected_adapter: Adapter,
     provider_name: str,
     risk_tier: str | None = None,
     session_id=None,

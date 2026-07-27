@@ -9,7 +9,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 
-from app.db.models import Project, Span, Trace, TraceAnnotation
+from app.db.models import Span, Trace, TraceAnnotation
 from app.db.session import AsyncSessionLocal
 from app.tracing.schema import (
     SpanBatchIngest,
