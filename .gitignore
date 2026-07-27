@@ -57,3 +57,7 @@ coverage/
 # Scratch prompt/plan dumps
 files (*)/
 files (*).zip
+
+# Runtime state: local triage cache registry (SQLite) + patch artifacts
+# written by app/agents/triage.py when no GITHUB_TOKEN is configured
+.sentinel/
